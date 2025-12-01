@@ -14,7 +14,6 @@ import java.io.Serializable
 
 private const val STATES_DIR = "game_states"
 
-/** Wrapper for serializing both state and first player. */
 data class SavedGame(
     val state: ReversiState,
     val firstPlayer: ReversiColor
@@ -30,7 +29,9 @@ object GameFileManager {
             val file = File(dir, "$name.dat")
             if (file.exists()) return@withContext false
 
-            val savedGame = SavedGame(game.currentState, firstPlayer)
+            // Forçar o currentTurn do estado para a cor escolhida pelo utilizador
+            val initialState = game.currentState.copy(currentTurn = firstPlayer)
+            val savedGame = SavedGame(initialState, firstPlayer)
             ObjectOutputStream(FileOutputStream(file)).use { it.writeObject(savedGame) }
             return@withContext true
         }
@@ -52,9 +53,17 @@ object GameFileManager {
 
         ObjectInputStream(FileInputStream(file)).use { stream ->
             val saved = stream.readObject() as SavedGame
-            // Recreate state to refresh lazy properties (as in original)
             val refreshedState = saved.state.copy()
             return@withContext saved.copy(state = refreshedState)
         }
+    }
+
+    suspend fun loadGame(name: String): Reversi? = withContext(Dispatchers.IO) {
+        val saved = loadSavedGame(name) ?: return@withContext null
+
+        // Criar com a cor inicial guardada e restaurar o estado inteiro
+        val game = Reversi(startingColor = saved.firstPlayer)
+        game.restoreState(saved.state)
+        return@withContext game
     }
 }
