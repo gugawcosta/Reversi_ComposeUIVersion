@@ -1,4 +1,4 @@
-package org.example.reversi.ui
+package reversi_ui
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.*
@@ -84,5 +84,5 @@ private fun handleNoMovesAndMaybeEnd(
     }
 
     return nextState
-}
+}//
 

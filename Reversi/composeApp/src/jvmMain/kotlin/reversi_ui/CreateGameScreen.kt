@@ -1,4 +1,4 @@
-package org.example.reversi.ui
+package reversi_ui
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.BorderStroke
@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import reversi.model.ReversiColor
 import reversi.core.Reversi
-import org.example.reversi.ui.GameFileManager
 
 @Composable
 fun CreateGameScreen(
@@ -37,7 +36,7 @@ fun CreateGameScreen(
     onDismiss: () -> Unit
 ) {
     val gameName = remember { mutableStateOf("") }
-    val selectedColor = remember { mutableStateOf(ReversiColor.BLACK) }
+    val selectedColor = remember { mutableStateOf(ReversiColor.WHITE) }
     val isWorking = remember { mutableStateOf(false) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
@@ -114,7 +113,7 @@ fun CreateGameScreen(
                     onClick = {
                         val nameTrim = gameName.value.trim()
                         // Se não houver nome, cria apenas o jogo local (manter comportamento opcional)
-                        if (nameTrim.isBlank()) {
+                        if (nameTrim.isEmpty()) {
                             onConfirm(nameTrim, selectedColor.value)
                             return@TextButton
                         }
@@ -126,14 +125,15 @@ fun CreateGameScreen(
                             try {
                                 val newGame = Reversi(startingColor = selectedColor.value)
                                 val success = GameFileManager.createNewGameFile(nameTrim, newGame, selectedColor.value)
-                                if (success) {
+                                if (success)
                                     onConfirm(nameTrim, selectedColor.value)
-                                } else {
+                                else
                                     errorMessage.value = "Este jogo já existe: $nameTrim"
-                                }
-                            } catch (e: Throwable) {
+                            }
+                            catch (_: Throwable) {
                                 errorMessage.value = "Erro ao guardar o jogo"
-                            } finally {
+                            }
+                            finally {
                                 isWorking.value = false
                             }
                         }

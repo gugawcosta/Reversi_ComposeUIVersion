@@ -1,4 +1,4 @@
-package org.example.reversi.ui
+package reversi_ui
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
