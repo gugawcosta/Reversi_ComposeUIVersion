@@ -1,4 +1,4 @@
-package org.example.reversi.ui
+package reversi_ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

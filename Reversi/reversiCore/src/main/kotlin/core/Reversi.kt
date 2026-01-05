@@ -68,7 +68,7 @@ class Reversi(
     /**
      * The current immutable game state.
      */
-    override var currentState: ReversiState = setup()
+    override var currentState: ReversiState = initialSetup()
 
     init {
         require(board.height % 2 == 0) { "Board height must be even" }
@@ -83,25 +83,11 @@ class Reversi(
     }
 
     /**
-     * Checks if the game is over based on the current state.
-     *
-     * @return `true` if the game has ended, otherwise `false`.
-     */
-    override fun isOver() = currentState.reversiIsOver(board)
-
-    /**
-     * Returns the result of the current game.
-     *
-     * @return the [ReversiResult] of the game (win, draw, or ongoing).
-     */
-    override fun getResult() = currentState.reversiGetResult(board)
-
-    /**
      * Initializes a new game state with the starting pieces and starting color.
      *
      * @return a new [ReversiState] representing the starting state of the game.
      */
-    override fun setup(): ReversiState {
+    override fun initialSetup(): ReversiState {
         val initialPieces = board.getInitialPieces()
 
         return ReversiState(
@@ -110,23 +96,5 @@ class Reversi(
             consecutivePasses = 0,
             board = board
         )
-    }
-
-    /**
-     * Applies a given action to the current state and returns the resulting new state.
-     *
-     * @param action the [ReversiAction] to apply.
-     * @return the updated [ReversiState] after applying the action.
-     */
-    override fun applyAction(action: ReversiAction) = currentState.reversiApplyAction(action, board)
-
-    /**
-     * Retrieves all legal moves for the current player in the current state.
-     *
-     * @return a set of [ReversiAction] representing all legal moves.
-     */
-    override fun getLegalMoves() = currentState.reversiGetLegalMoves(board)
-    fun reset() {
-        currentState = setup()
     }
 }

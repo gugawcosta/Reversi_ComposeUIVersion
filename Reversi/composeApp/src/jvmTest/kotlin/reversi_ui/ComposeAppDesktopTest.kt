@@ -1,4 +1,4 @@
-package org.example.reversi
+package reversi_ui
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -15,4 +15,9 @@ import reversi.framework.Cell
  *
  * @property position the [Cell] where the piece will be placed, or `null` to indicate a pass.
  */
-data class ReversiAction(val position: Cell? = null) : AdversarialBoardGame.Action
+data class ReversiAction(val position: Cell? = null): AdversarialBoardGame.Action {
+    companion object {
+        @Suppress("unused")
+        val PASS = ReversiAction(null)
+    }
+}

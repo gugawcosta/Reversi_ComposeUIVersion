@@ -5,6 +5,7 @@ import reversi.model.ReversiColor
 import reversi.model.ReversiPiece
 import reversi.framework.AdversarialBoardGame
 import reversi.framework.Cell
+import reversi.framework.GameResult
 import java.io.Serializable
 import kotlin.getValue
 import kotlin.lazy
@@ -39,16 +40,26 @@ data class ReversiState(
 ):  AdversarialBoardGame.State<ReversiColor, Map<Cell, ReversiPiece>, ReversiAction>,
     Serializable
 {
+    @delegate:Transient
+    override val result: GameResult by lazy { reversiGetResult(board) }
 
     /** The set of legal moves for the current player, computed lazily. */
     @delegate:Transient
-    override val legalMoves by lazy { reversiGetLegalMoves(board) }
+    override val legalMoves: Set<ReversiAction> by lazy { reversiGetLegalMoves(board) }
 
     /** Whether the game is over, computed lazily. */
     @delegate:Transient
-    override val isOver by lazy { reversiIsOver(board) }
+    override val isOver: Boolean by lazy { reversiIsOver(board) }
 
     /** The current score of the game, computed lazily from [pieces]. */
     @delegate:Transient
-    val score by lazy { pieces.getScore() }
+    val score: ReversiScore by lazy { pieces.getScore() }
+
+    /**
+     * Applies a given action to the current state and returns the resulting new state.
+     *
+     * @param action the [ReversiAction] to apply.
+     * @return the updated [ReversiState] after applying the action.
+     */
+    override fun applyAction(action: ReversiAction) = reversiApplyAction(action, board)
 }
