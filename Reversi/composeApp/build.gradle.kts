@@ -8,6 +8,7 @@ plugins {
 }
 
 kotlin {
+    jvmToolchain(21)
     jvm()
 
     sourceSets {
@@ -21,22 +22,24 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(project(":reversiCore"))
+
+            // Serialization (common) so DTOs in core are serializable
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
-            // @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
-            // implementation(compose.components.uiTest)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
             implementation(project(":reversiCore"))
+            // jvm-specific is optional (we have common serialization)
         }
     }
 }
 compose.desktop {
     application {
-        mainClass = "MainKt" // substitui se a tua main tiver outro nome
+        mainClass = "MainKt"
         nativeDistributions {
             targetFormats(
                 TargetFormat.Dmg,
@@ -50,12 +53,10 @@ compose.desktop {
     }
 }
 
-// Para execução via Gradle
 tasks.withType<JavaExec> {
     jvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
 }
 
-// Para o JAR gerado
 tasks.withType<CreateStartScripts> {
     defaultJvmOpts = listOf("--enable-native-access=ALL-UNNAMED")
 }
@@ -64,4 +65,3 @@ compose.resources {
     publicResClass = true
     generateResClass = always
 }
-
