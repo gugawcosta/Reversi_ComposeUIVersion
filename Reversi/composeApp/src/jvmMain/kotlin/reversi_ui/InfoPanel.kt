@@ -1,4 +1,4 @@
-package org.example.reversi.ui
+package reversi_ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -82,7 +82,7 @@ fun InfoPanel(viewModel: GameViewModel) {
 
         // botão desativado quando o jogo acabou
         Button(
-            onClick = { if (!viewModel.gameOver) viewModel.forcePass() },
+            onClick = { if (!viewModel.gameOver) viewModel.passTurn() },
             enabled = !viewModel.gameOver,
             colors = ButtonDefaults.buttonColors(
                 backgroundColor = Color(0xFF2F2F2F),

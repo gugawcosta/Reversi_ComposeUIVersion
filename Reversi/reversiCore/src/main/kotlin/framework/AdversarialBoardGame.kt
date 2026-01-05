@@ -43,6 +43,10 @@ interface AdversarialBoardGame<
 
         /** The board associated with this state. */
         val board: Board
+
+        val result: GameResult
+
+        fun applyAction(action: A): State<ID, T, A>
     }
 
     /**
@@ -64,37 +68,5 @@ interface AdversarialBoardGame<
      *
      * @return the initial game state after setup.
      */
-    fun setup(): S
-
-    /**
-     * Applies the given action to the game and returns the resulting state.
-     *
-     * @param action the action to apply.
-     * @return the new game state after applying the action.
-     */
-    fun applyAction(action: A): State<ID, T, A>
-
-    /**
-     * Determines if the game is over.
-     *
-     * @return `true` if the game has ended, `false` otherwise.
-     */
-    fun isOver(): Boolean
-
-    /**
-     * Returns the result of the game once it has ended.
-     *
-     * @return the final [GameResult] of the game.
-     */
-    fun getResult(): GameResult
-
-    /**
-     * Returns the set of legal actions available to the current player.
-     *
-     * @return a [Set] of legal moves of type [A].
-     */
-    fun getLegalMoves(): Set<A>
-    fun startNewGame() {
-        currentState = setup()
-    }
+    fun initialSetup(): S
 }

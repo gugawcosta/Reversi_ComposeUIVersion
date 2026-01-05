@@ -1,4 +1,4 @@
-package org.example.reversi.ui
+package reversi_ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -80,6 +80,7 @@ fun BoardView(viewModel: GameViewModel) {
         }
     }
 
+    @Suppress("AssignedValueIsNeverRead")
     if (invalidPos != null) {
         AlertDialog(
             onDismissRequest = { invalidPos = null },
