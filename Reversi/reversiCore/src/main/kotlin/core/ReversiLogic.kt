@@ -6,7 +6,6 @@ import reversi.model.ReversiDirection
 import reversi.model.ReversiPiece
 import reversi.framework.Cell
 import kotlin.collections.iterator
-import kotlin.collections.plusAssign
 
 /**
  * Determines whether the game is over.
@@ -62,6 +61,7 @@ fun ReversiState.reversiGetResult(board: ReversiBoard): ReversiResult {
  * @param board the [ReversiBoard] associated with the game.
  * @return a new [ReversiState] reflecting the result of the action.
  */
+
 fun ReversiState.reversiApplyAction(action: ReversiAction, board: ReversiBoard): ReversiState {
     val currentColor = currentTurn
     val opponentColor = currentColor.invertColor()
@@ -80,34 +80,41 @@ fun ReversiState.reversiApplyAction(action: ReversiAction, board: ReversiBoard):
     // Place the new piece
     newPieces[pos] = ReversiPiece(pos, currentColor)
 
-    // Flip pieces in all 8 directions if they are sandwiched
+    // Flip pieces in all 8 directions
     for (dir in ReversiDirection.entries) {
         var row = pos.row
         var col = pos.col
         val toFlip = mutableListOf<Cell>()
 
-        do {
+        while (true) { // Usar while(true) em vez de do-while para controlar melhor o break
             row += dir.dx
             col += dir.dy
 
-            val currentPiece = newPieces[Cell(row, col)] ?: break // Empty — not flippable
+            // 1. Verificação de segurança PRIMEIRO
+            if (!board.isValid(Cell(row, col))) break
 
-            if (currentPiece.color == opponentColor) {  // Potentially flippable
-                toFlip += Cell(row, col)
+            val currentCell = Cell(row, col)
+            val currentPiece = newPieces[currentCell]
+
+            // 2. Se a casa está vazia, a linha quebrou (não vira nada nesta direção)
+            if (currentPiece == null) break
+
+            // 3. Se é oponente, adiciona à lista de potenciais capturas
+            if (currentPiece.color == opponentColor) {
+                toFlip.add(currentCell)
                 continue
             }
 
-            if (currentPiece.color == currentColor) {   // Found our own color → confirm flip
+            // 4. Se é a nossa cor, confirma a captura!
+            if (currentPiece.color == currentColor) {
                 toFlip.forEach { flipPos ->
                     newPieces[flipPos] = ReversiPiece(flipPos, currentColor)
                 }
+                break // Captura feita, sai desta direção
             }
-
-            break
-        } while (board.isValid(Cell(row, col)))
+        }
     }
 
-    // Return updated state
     return copy(
         pieces = newPieces,
         currentTurn = opponentColor,
@@ -125,51 +132,58 @@ fun ReversiState.reversiApplyAction(action: ReversiAction, board: ReversiBoard):
  * @param board the [ReversiBoard] associated with the game.
  * @return a set of [ReversiAction] representing all legal moves.
  */
-fun ReversiState.reversiGetLegalMoves(board: ReversiBoard): Set<ReversiAction> {
 
-    fun octaDirectionalLaserCheck(piece: ReversiPiece): Set<ReversiAction> {
-        val legalMoves = mutableSetOf<ReversiAction>()
-        val currentColor = piece.color
+fun ReversiState.reversiGetLegalMoves(board: ReversiBoard): Set<ReversiAction> {
+    val legalMoves = mutableSetOf<ReversiAction>()
+    val currentColor = currentTurn
+
+    // 1. We define this INSIDE the function so it can see 'board' and 'pieces'
+    fun octaDirectionalLaserCheck(originPiece: ReversiPiece) {
         val opponentColor = currentColor.invertColor()
 
         for (dir in ReversiDirection.entries) {
-            var row = piece.position.row
-            var col = piece.position.col
+            var row = originPiece.position.row
+            var col = originPiece.position.col
             var foundOpponent = false
 
-            do {
+            while (true) {
                 row += dir.dx
                 col += dir.dy
-                val currentPiece = pieces[Cell(row, col)]
 
-                if (currentPiece == null) {
-                    // Empty square — valid only if we passed at least one opponent piece
-                    if (foundOpponent)
-                        legalMoves += ReversiAction(Cell(row, col))
-                    break
+                // FIX: Check bounds first to prevent crashes
+                if (!board.isValid(Cell(row, col))) break
+
+                val currentCell = Cell(row, col)
+                val pieceAtCell = pieces[currentCell]
+
+                if (pieceAtCell == null) {
+                    // We found an empty square.
+                    // It is a valid move ONLY if we sandwiched opponent pieces.
+                    if (foundOpponent) {
+                        legalMoves.add(ReversiAction(currentCell))
+                    }
+                    break // Stop scanning this direction
                 }
 
-                if (currentPiece.color == opponentColor) {
-                    foundOpponent = true // Keep scanning if it's an opponent piece
-                    continue
+                if (pieceAtCell.color == opponentColor) {
+                    foundOpponent = true
+                    continue // Keep going to look for the empty spot behind them
                 }
 
-                break // Found our own color — stop scanning this direction
-
-            } while (board.isValid(Cell(row, col)))
+                // We hit our own color -> blocked line
+                break
+            }
         }
-
-        return legalMoves
     }
 
-    val mainSet = mutableSetOf<ReversiAction>()
-    val currentColor = currentTurn
-
-    for ((_, piece) in pieces)
-        if (piece.color == currentColor)
-            mainSet += octaDirectionalLaserCheck(piece)
-
-    return mainSet
+    // 2. The Main Loop
+    // We iterate over OUR pieces and look for lines extending from them
+    for ((_, piece) in pieces) {
+        if (piece.color == currentColor) {
+            octaDirectionalLaserCheck(piece)
+        }
+    }
+    return legalMoves
 }
 
 /**

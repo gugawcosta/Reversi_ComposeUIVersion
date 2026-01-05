@@ -45,8 +45,13 @@ class GameViewModel {
     }
 
     fun passTurn() {
+        println("Pass Triggered. Changing turn from ${currentState.currentTurn}...")
+
         game.currentState = currentState.applyAction(ReversiAction.PASS)
         currentState = game.currentState
+
+        println("...New turn is now: ${currentState.currentTurn}")
+        println("...New player has ${currentState.legalMoves.size} moves.")
     }
 
     fun getPieceAt(cell: Cell): ReversiPiece? = currentState.pieces[cell]

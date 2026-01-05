@@ -83,7 +83,7 @@ fun InfoPanel(viewModel: GameViewModel) {
         // botão desativado quando o jogo acabou
         Button(
             onClick = { if (!viewModel.gameOver) viewModel.passTurn() },
-            enabled = !viewModel.gameOver,
+            enabled = !viewModel.gameOver && viewModel.currentState.legalMoves.isEmpty(),
             colors = ButtonDefaults.buttonColors(
                 backgroundColor = Color(0xFF2F2F2F),
                 contentColor = Color.White

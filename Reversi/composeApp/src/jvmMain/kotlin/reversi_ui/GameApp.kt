@@ -5,34 +5,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import reversi.core.ReversiAction
 import kotlin.system.exitProcess
-
-import reversi.model.ReversiBoard
-import reversi.core.ReversiState
-import reversi.core.reversiGetLegalMoves
-import reversi.core.reversiApplyAction
-import reversi.core.reversiIsOver
 
 @Composable
 @Preview
 fun GameApp(viewModel: GameViewModel = remember { GameViewModel() }) {
-    // Executa sempre que o estado muda (inclui inicialização e após startNewGame)
-    LaunchedEffect(viewModel.currentState) {
-        handleNoMovesAndMaybeEnd(
-            state = viewModel.currentState,
-            board = viewModel.game.board,
-            onStateUpdated = { updated -> viewModel.updateState(updated) },
-            onGameOver = { final -> viewModel.onGameOver(final) }
-        )
-    }
-
     MaterialTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -64,25 +46,3 @@ fun GameApp(viewModel: GameViewModel = remember { GameViewModel() }) {
         }
     }
 }
-
-private fun handleNoMovesAndMaybeEnd(
-    state: ReversiState,
-    board: ReversiBoard,
-    onStateUpdated: (ReversiState) -> Unit,
-    onGameOver: (ReversiState) -> Unit
-): ReversiState {
-    val legal = state.reversiGetLegalMoves(board)
-    if (legal.isNotEmpty()) return state
-
-    val passAction = ReversiAction(position = null)
-    val nextState = state.reversiApplyAction(passAction, board)
-    onStateUpdated(nextState)
-
-    val opponentLegal = nextState.reversiGetLegalMoves(board)
-    if (opponentLegal.isEmpty() || nextState.reversiIsOver(board)) {
-        onGameOver(nextState)
-    }
-
-    return nextState
-}//
-

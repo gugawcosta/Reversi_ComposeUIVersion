@@ -57,7 +57,7 @@ val BOARD = ReversiBoard(BOARD_HEIGHT, BOARD_WIDTH)
  */
 class Reversi(
     override val board: ReversiBoard = BOARD,
-    val startingColor: ReversiColor = ReversiColor.BLACK
+    val startingColor: ReversiColor = ReversiColor.BLACK // aqui tem de ser o que a pessoa escolheu quando criou o jogo
 ) : AdversarialBoardGame<
         ReversiColor,
         Map<Cell, ReversiPiece>,

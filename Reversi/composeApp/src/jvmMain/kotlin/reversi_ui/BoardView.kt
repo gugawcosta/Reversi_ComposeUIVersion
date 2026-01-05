@@ -100,6 +100,8 @@ fun BoardView(viewModel: GameViewModel) {
                         append("Mostrar jogadas")
                     }
                     append("' para revelar as células (válidas) onde poderá jogar.")
+                    for (move in viewModel.currentState.legalMoves)
+                        println("Legal move at: [${move.position?.row}; ${move.position?.col}]\n")
                 })
             },
             confirmButton = {

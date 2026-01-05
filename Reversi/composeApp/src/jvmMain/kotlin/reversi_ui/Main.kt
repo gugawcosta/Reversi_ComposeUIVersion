@@ -1,3 +1,5 @@
+package reversi_ui
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,7 +39,7 @@ fun main() = application {
         var currentScreen by remember { mutableStateOf(Screen.START) }
 
         when (currentScreen) {
-            Screen.START -> _root_ide_package_.reversi_ui.StartScreen(
+            Screen.START -> StartScreen(
                 onEnterGame = { currentScreen = Screen.GAME },
                 onCreateGame = { currentScreen = Screen.CREATE },
                 onResolution = { currentScreen = Screen.RESOLUTION }
@@ -45,14 +47,14 @@ fun main() = application {
 
             Screen.CREATE -> {
                 // desenha a StartScreen por baixo (mantendo o background/visual igual ao Join dialog)
-                _root_ide_package_.reversi_ui.StartScreen(
+                StartScreen(
                     onEnterGame = { currentScreen = Screen.GAME },
                     onCreateGame = { currentScreen = Screen.CREATE },
                     onResolution = { currentScreen = Screen.RESOLUTION }
                 )
 
                 // sobrepõe o diálogo de criar jogo
-                _root_ide_package_.reversi_ui.CreateGameScreen(
+                CreateGameScreen(
                     onConfirm = { _, _ ->
                         // navegar para jogo (poderia passar parâmetros ao ViewModel conforme necessário)
                         currentScreen = Screen.GAME
@@ -61,7 +63,7 @@ fun main() = application {
                 )
             }
 
-            Screen.GAME -> _root_ide_package_.reversi_ui.GameApp()
+            Screen.GAME -> GameApp()
 
             Screen.RESOLUTION -> {
                 Box(
@@ -69,7 +71,7 @@ fun main() = application {
                         .fillMaxSize()
                         .background(Color(0xFF0F7A0F))
                 ) {
-                    _root_ide_package_.reversi_ui.ResolutionScreen(
+                    ResolutionScreen(
                         onBack = { currentScreen = Screen.START },
                         onSetWindowSize = { wDp: Dp, hDp: Dp ->
                             windowState.size = DpSize(wDp, hDp)

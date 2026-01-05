@@ -39,7 +39,7 @@ kotlin {
 }
 compose.desktop {
     application {
-        mainClass = "MainKt"
+        mainClass = "reversi_ui.MainKt"
         nativeDistributions {
             targetFormats(
                 TargetFormat.Dmg,
