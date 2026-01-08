@@ -22,9 +22,14 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(project(":reversiCore"))
+            implementation(compose.materialIconsExtended)
 
             // Serialization (common) so DTOs in core are serializable
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+            // Driver oficial do MongoDB (Sync é mais simples para começar)
+            implementation("org.mongodb:mongodb-driver-sync:4.11.0")
+            // (Opcional) SLF4J para gerir logs e não poluir a consola
+            implementation("org.slf4j:slf4j-simple:2.0.9")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

@@ -3,26 +3,40 @@ package reversi_ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import androidx.compose.ui.window.WindowPlacement
 import org.jetbrains.compose.resources.painterResource
 import reversi.composeapp.generated.resources.Res
 import reversi.composeapp.generated.resources.reversi
-import java.awt.Frame
+import reversi.core.Reversi
+import reversi.model.ReversiColor
 
-@Suppress("AssignedValueIsNeverRead")
+/**
+ * Ponto de entrada da aplicação Reversi com Compose Multiplataforma.
+ * Configura a janela principal e gerencia a navegação entre telas.
+ * As telas disponíveis são:
+ * 1. StartScreen: Menu inicial com opções para iniciar jogo local, criar/juntar
+ * jogo online, ou mudar resolução.
+ * 2. LobbyScreen: Tela para listar e juntar a jogos online existentes (MongoDB).
+ * 3. GameApp: Tela principal do jogo Reversi, onde o jogo é
+ * jogado.
+ * 4. ResolutionScreen: Tela para ajustar a resolução e fullscreen.
+ * Cada tela é representada por um enum Screen.
+ * As variáveis activeGame, activeGameName e localPlayerColor
+ * são usadas para passar o estado do jogo entre as telas.
+ * A janela é inicializada com tamanho 800x600 e centrada na tela.
+ * A janela não é redimensionável para manter a integridade do layout.
+ */
+
 fun main() = application {
     val windowState = rememberWindowState(
         size = DpSize(800.dp, 600.dp),
@@ -31,59 +45,83 @@ fun main() = application {
 
     Window(
         onCloseRequest = ::exitApplication,
-        title = "Reversi",
+        title = "Reversi Multiplayer",
         icon = painterResource(Res.drawable.reversi),
         state = windowState,
         resizable = false
     ) {
         var currentScreen by remember { mutableStateOf(Screen.START) }
 
+        // Variáveis para passar o jogo do Menu/Lobby para o Tabuleiro
+        var activeGame by remember { mutableStateOf<Reversi?>(null) }
+        var activeGameName by remember { mutableStateOf("") }
+        var localPlayerColor by remember { mutableStateOf(ReversiColor.BLACK) }
+
         when (currentScreen) {
-            Screen.START -> StartScreen(
-                onEnterGame = { currentScreen = Screen.GAME },
-                onCreateGame = { currentScreen = Screen.CREATE },
-                onResolution = { currentScreen = Screen.RESOLUTION }
-            )
-
-            Screen.CREATE -> {
-                // desenha a StartScreen por baixo (mantendo o background/visual igual ao Join dialog)
+            // Menu Inicial
+            Screen.START -> {
                 StartScreen(
-                    onEnterGame = { currentScreen = Screen.GAME },
-                    onCreateGame = { currentScreen = Screen.CREATE },
-                    onResolution = { currentScreen = Screen.RESOLUTION }
-                )
-
-                // sobrepõe o diálogo de criar jogo
-                CreateGameScreen(
-                    onConfirm = { _, _ ->
-                        // navegar para jogo (poderia passar parâmetros ao ViewModel conforme necessário)
+                    onGameStart = { game, name, color ->
+                        activeGame = game
+                        activeGameName = name
+                        localPlayerColor = color
                         currentScreen = Screen.GAME
                     },
-                    onDismiss = { currentScreen = Screen.START }
+                    onResolution = {
+                        currentScreen = Screen.RESOLUTION
+                    },
+                    onOpenLobby = {
+                        currentScreen = Screen.LOBBY // Vai para o Lobby
+                    }
                 )
             }
-
-            Screen.GAME -> GameApp()
-
+            // Lobby Multiplayer
+            Screen.LOBBY -> {
+                LobbyScreen(
+                    onJoinGame = { game, name, color ->
+                        activeGame = game
+                        activeGameName = name
+                        localPlayerColor = color
+                        currentScreen = Screen.GAME // Vai para o jogo com os dados carregados
+                    },
+                    onBack = {
+                        currentScreen = Screen.START
+                    }
+                )
+            }
+            // Tela do Jogo
+            Screen.GAME -> {
+                if (activeGame != null) {
+                    GameApp(
+                        game = activeGame!!,
+                        gameName = activeGameName,
+                        playerColor = localPlayerColor,
+                        onExit = {
+                            activeGame = null
+                            currentScreen = Screen.START
+                        }
+                    )
+                } else {
+                    // Segurança: se não houver jogo, volta ao início
+                    currentScreen = Screen.START
+                }
+            }
+            // Configuração de Resolução
             Screen.RESOLUTION -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFF0F7A0F))
-                ) {
+                Box(modifier = Modifier.fillMaxSize().background(Color(0xFF0F7A0F))) {
                     ResolutionScreen(
                         onBack = { currentScreen = Screen.START },
-                        onSetWindowSize = { wDp: Dp, hDp: Dp ->
-                            windowState.size = DpSize(wDp, hDp)
+                        onSetWindowSize = { w, h ->
+                            // Garante que sai de fullscreen ao mudar resolução
+                            windowState.placement = WindowPlacement.Floating
+                            windowState.size = DpSize(w, h)
                             windowState.position = WindowPosition.Aligned(Alignment.Center)
                         },
-                        onToggleFullscreen = { fullscreen ->
-                            val frame = Frame.getFrames().firstOrNull { it.title == "Reversi" }
-                            frame?.let {
-                                if (fullscreen)
-                                    it.extendedState = Frame.MAXIMIZED_BOTH
-                                else
-                                    it.extendedState = Frame.NORMAL
+                        onToggleFullscreen = { goFullscreen ->
+                            if (goFullscreen) {
+                                windowState.placement = WindowPlacement.Fullscreen
+                            } else {
+                                windowState.placement = WindowPlacement.Floating
                             }
                         }
                     )
@@ -93,22 +131,7 @@ fun main() = application {
     }
 }
 
-enum class Screen {
-    START,
-    CREATE,
-    GAME,
-    RESOLUTION
-}
-
-// O jogo ta bonito e bem! O front end code ta bom
-// A parte de importar pode tar cook e algumas coisas q n consigo fazer (compreensivel)
-// Cenas da logica do jogo (passar a jogada) (consecutive passes transition to end state)
-
-// If current passes == Max consecutive passes -> transition state
-
-// BASE DE DADOS (MongoDB) atualizacao automatica a partir de la + atualizacao manual
-
-// Haver lobby... lobby ta conectado a base de dados
-// No lobby tem jogos guardados, preview do tabuleiro, proximo jogador, acesso ao jogo?
-// O q acontece no lobby?
-// no need for lobby? (extra)
+/**
+ * Enumeração das telas disponíveis na aplicação.
+ */
+enum class Screen { START, GAME, RESOLUTION, LOBBY }

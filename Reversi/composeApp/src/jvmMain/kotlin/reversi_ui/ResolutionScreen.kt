@@ -1,33 +1,13 @@
 package reversi_ui
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Card
-import androidx.compose.material.LocalContentAlpha
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.material.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,7 +15,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -46,39 +25,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 
-@Composable
-fun TranslucentButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(12.dp),
-    backgroundAlpha: Float = 0.75f,
-    contentAlpha: Float = 0.6f,
-    content: @Composable RowScope.() -> Unit
-) {
-    val translucentColors = ButtonDefaults.buttonColors(
-        backgroundColor = Color(0xFF2F2F2F).copy(alpha = backgroundAlpha),
-        contentColor = Color.White
-    )
-
-    Button(
-        onClick = onClick,
-        modifier = modifier,
-        shape = shape,
-        colors = translucentColors,
-        content = {
-            CompositionLocalProvider(LocalContentAlpha provides contentAlpha) {
-                content()
-            }
-        }
-    )
-}
+/**
+ * Tela de seleção de resolução e modo de tela cheia.
+ *
+ * @param onBack Função chamada ao clicar em "Voltar".
+ * @param onSetWindowSize Função chamada ao selecionar uma resolução.
+ * Recebe a largura e altura em Dp.
+ * @param onToggleFullscreen Função chamada ao alternar o modo tela cheia.
+ * Recebe true para ativar e false para desativar.
+ */
 @Composable
 fun ResolutionScreen(
     onBack: () -> Unit,
     onSetWindowSize: (widthDp: Dp, heightDp: Dp) -> Unit,
-    onToggleFullscreen: (Boolean) -> Unit // novo callback para fullscreen
+    onToggleFullscreen: (Boolean) -> Unit
 ) {
-    // animação de gradiente horizontal (igual à StartScreen)
     val transition = rememberInfiniteTransition()
     val animProgress by transition.animateFloat(
         initialValue = -1f,
@@ -90,15 +51,26 @@ fun ResolutionScreen(
     )
 
     var boxWidthPx by remember { mutableStateOf(0) }
-    var isFullscreen by remember { mutableStateOf(false) } // estado local do fullscreen
+    var isFullscreen by remember { mutableStateOf(false) }
 
-    // cantos dos botões proporcionais aos cantos da Box (Box/Card usa 24.dp - aqui metade = 12.dp)
-    val buttonCorner = 12.dp
+    val buttonCornerRadius = 12.dp
+    val buttonShape = RoundedCornerShape(buttonCornerRadius)
+
+    // Cores dos botões
+    val vividButtonBg = Color(0xFF2E7D32)
+    val vividButtonBorder = Color(0xFF81C784)
+
+    val backButtonBg = Color(0xFF1B5E20).copy(alpha = 0.9f)
+    val backButtonBorder = Color(0xFF81C784).copy(alpha = 0.5f)
+
+    // Cores dos botões desativados
+    val disabledButtonBg = Color(0xFF1B5E20).copy(alpha = 0.4f)
+    val disabledText = Color.White.copy(alpha = 0.4f)
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0F260F)), // mesmo fundo escuro/verde
+            .background(Color(0xFF0F260F)),
         contentAlignment = Alignment.Center
     ) {
         Card(
@@ -106,7 +78,7 @@ fun ResolutionScreen(
                 .clip(RoundedCornerShape(24.dp))
                 .padding(16.dp)
                 .fillMaxWidth(0.86f)
-                .height(420.dp), // maior para cima/baixo igual à StartScreen
+                .height(520.dp),
             elevation = 8.dp,
             backgroundColor = Color.Transparent
         ) {
@@ -115,131 +87,146 @@ fun ResolutionScreen(
                     .onSizeChanged { boxWidthPx = it.width }
                     .background(
                         brush = Brush.linearGradient(
-                            colors = listOf(
-                                Color(0xFF49A64C), Color(0xFF48A54B), Color(0xFF47A34A), Color(0xFF46A249), Color(0xFF45A049),
-                                Color(0xFF449F48), Color(0xFF439E47), Color(0xFF429C46), Color(0xFF419B45), Color(0xFF409A44),
-                                Color(0xFF3F9843), Color(0xFF3E9742), Color(0xFF3D9641), Color(0xFF3C9440), Color(0xFF3C9340),
-                                Color(0xFF3B923F), Color(0xFF3A913E), Color(0xFF3A903E), Color(0xFF398F3D), Color(0xFF388E3C),
-                                Color(0xFF388D3C), Color(0xFF378C3B), Color(0xFF368B3A), Color(0xFF368A3A), Color(0xFF358939),
-                                Color(0xFF358839), Color(0xFF348738), Color(0xFF338537), Color(0xFF338437), Color(0xFF328336),
-                                Color(0xFF318235), Color(0xFF318135), Color(0xFF308034), Color(0xFF2F7F33), Color(0xFF2F7E33),
-                                Color(0xFF2E7D32), Color(0xFF2E7C32), Color(0xFF2D7B31), Color(0xFF2C7A30), Color(0xFF2C7930),
-                                Color(0xFF2B782F), Color(0xFF2A772E), Color(0xFF2A762E), Color(0xFF29752D), Color(0xFF28742D),
-                                Color(0xFF28732C), Color(0xFF27722B), Color(0xFF27712B), Color(0xFF26702A), Color(0xFF256F2A),
-                                Color(0xFF256E29), Color(0xFF246D29), Color(0xFF236C28), Color(0xFF236B28), Color(0xFF226A27),
-                                Color(0xFF216926), Color(0xFF216826), Color(0xFF206725), Color(0xFF206625), Color(0xFF1F6524),
-                                Color(0xFF1F6424), Color(0xFF1E6323), Color(0xFF1D6222), Color(0xFF1D6122), Color(0xFF1C6021),
-                                Color(0xFF1C5F21), Color(0xFF1B5E20), Color(0xFF1B5D20), Color(0xFF1A5C1F), Color(0xFF195B1E)
-                            ),
+                            colors = listOf(Color(0xFF49A64C), Color(0xFF195B1E)),
                             start = Offset(x = if (boxWidthPx == 0) 0f else animProgress * boxWidthPx, y = 0f),
                             end = Offset(x = if (boxWidthPx == 0) 0.toFloat() else (animProgress * boxWidthPx + boxWidthPx), y = 0f)
                         ),
                         shape = RoundedCornerShape(24.dp)
                     )
-                    .padding(28.dp)
+                    .padding(vertical = 32.dp, horizontal = 28.dp)
             ) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(18.dp, alignment = Alignment.CenterVertically)
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // título (idêntico ao que já tinha)
+                    // Título
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        val label = "Escolha uma das resoluções desejadas:"
+                        val label = "Resoluções Disponíveis:"
                         val outlineColor = Color.Black.copy(alpha = 0.72f)
-
                         val mainStyle = TextStyle(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color(0xFF9BE49A),
-                                    Color(0xFF49A64C),
-                                    Color(0xFF2F7F33)
+                            brush = Brush.horizontalGradient(listOf(Color(0xFF9BE49A), Color(0xFF49A64C), Color(0xFF2F7F33))),
+                            fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.SansSerif,
+                            letterSpacing = 1.5.sp, shadow = Shadow(color = Color.Black.copy(alpha = 0.35f), offset = Offset(2f, 2f), blurRadius = 6f)
+                        )
+                        val outlineStyle = TextStyle(color = outlineColor, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, fontFamily = FontFamily.SansSerif, letterSpacing = 1.5.sp)
+
+                        for (x in -1..1) for (y in -1..1) if (x != 0 || y != 0)
+                            Text(label, modifier = Modifier.offset(x.dp, y.dp), style = outlineStyle, textAlign = TextAlign.Center)
+
+                        Text(label, style = mainStyle, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    val buttonTextStyle = TextStyle(
+                        fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = 1.2.sp,
+                        shadow = Shadow(color = Color.Black.copy(alpha = 0.25f), offset = Offset(1f, 1f), blurRadius = 2f)
+                    )
+
+                    // Botões de resolução
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+
+                        // 800 x 600
+                        Card(
+                            shape = buttonShape,
+                            border = BorderStroke(2.dp, if(!isFullscreen) vividButtonBorder else Color.Transparent),
+                            backgroundColor = if(!isFullscreen) vividButtonBg else disabledButtonBg,
+                            elevation = if(!isFullscreen) 6.dp else 0.dp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(55.dp)
+                                .clip(buttonShape)
+                                .clickable(enabled = !isFullscreen) { onSetWindowSize(800.dp, 600.dp) }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("800 x 600", style = buttonTextStyle.copy(color = if(!isFullscreen) Color.White else disabledText))
+                            }
+                        }
+
+                        // 1024 x 768
+                        Card(
+                            shape = buttonShape,
+                            border = BorderStroke(2.dp, if(!isFullscreen) vividButtonBorder else Color.Transparent),
+                            backgroundColor = if(!isFullscreen) vividButtonBg else disabledButtonBg,
+                            elevation = if(!isFullscreen) 6.dp else 0.dp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(55.dp)
+                                .clip(buttonShape)
+                                .clickable(enabled = !isFullscreen) { onSetWindowSize(1024.dp, 768.dp) }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("1024 x 768", style = buttonTextStyle.copy(color = if(!isFullscreen) Color.White else disabledText))
+                            }
+                        }
+
+                        // 1280 x 720
+                        Card(
+                            shape = buttonShape,
+                            border = BorderStroke(2.dp, if(!isFullscreen) vividButtonBorder else Color.Transparent),
+                            backgroundColor = if(!isFullscreen) vividButtonBg else disabledButtonBg,
+                            elevation = if(!isFullscreen) 6.dp else 0.dp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(55.dp)
+                                .clip(buttonShape)
+                                .clickable(enabled = !isFullscreen) { onSetWindowSize(1280.dp, 720.dp) }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("1280 x 720", style = buttonTextStyle.copy(color = if(!isFullscreen) Color.White else disabledText))
+                            }
+                        }
+
+                        // Botão Tela Cheia
+                        val fsColor = if(isFullscreen) Color(0xFFFFD54F) else Color.White
+                        val fsBorder = if(isFullscreen) Color(0xFFFFD54F) else vividButtonBorder
+
+                        // Este botão está sempre ativo
+                        Card(
+                            shape = buttonShape,
+                            border = BorderStroke(2.dp, fsBorder),
+                            backgroundColor = vividButtonBg,
+                            elevation = 6.dp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(55.dp)
+                                .clip(buttonShape)
+                                .clickable {
+                                    val next = !isFullscreen
+                                    isFullscreen = next
+                                    onToggleFullscreen(next)
+                                }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    if (isFullscreen) "Sair de Tela Cheia" else "Tela Cheia",
+                                    style = buttonTextStyle.copy(color = fsColor)
                                 )
-                            ),
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.SansSerif,
-                            letterSpacing = 1.2.sp,
-                            shadow = Shadow(
-                                color = Color.Black.copy(alpha = 0.35f),
-                                offset = Offset(2f, 2f),
-                                blurRadius = 6f
-                            )
-                        )
-
-                        val outlineStyle = TextStyle(
-                            color = outlineColor,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.SansSerif,
-                            letterSpacing = 1.2.sp
-                        )
-
-                        Text(label, modifier = Modifier.offset(x = (-1).dp, y = (-1).dp), style = outlineStyle, textAlign = TextAlign.Center)
-                        Text(label, modifier = Modifier.offset(x = (-1).dp, y = 0.dp), style = outlineStyle, textAlign = TextAlign.Center)
-                        Text(label, modifier = Modifier.offset(x = (-1).dp, y = 1.dp), style = outlineStyle, textAlign = TextAlign.Center)
-                        Text(label, modifier = Modifier.offset(x = 0.dp, y = (-1).dp), style = outlineStyle, textAlign = TextAlign.Center)
-                        Text(label, modifier = Modifier.offset(x = 0.dp, y = 1.dp), style = outlineStyle, textAlign = TextAlign.Center)
-                        Text(label, modifier = Modifier.offset(x = 1.dp, y = (-1).dp), style = outlineStyle, textAlign = TextAlign.Center)
-                        Text(label, modifier = Modifier.offset(x = 1.dp, y = 0.dp), style = outlineStyle, textAlign = TextAlign.Center)
-                        Text(label, modifier = Modifier.offset(x = 1.dp, y = 1.dp), style = outlineStyle, textAlign = TextAlign.Center)
-
-                        Text(
-                            label,
-                            style = mainStyle,
-                            textAlign = TextAlign.Center,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                            }
+                        }
                     }
 
-                    TranslucentButton(
-                        onClick = { onSetWindowSize(800.dp, 600.dp) },
-                        shape = RoundedCornerShape(buttonCorner)
-                    ) {
-                        Text("800 x 600")
-                    }
+                    Spacer(modifier = Modifier.weight(1f))
 
-                    TranslucentButton(
-                        onClick = { onSetWindowSize(1024.dp, 768.dp) },
-                        shape = RoundedCornerShape(buttonCorner)
+                    // Botão Voltar
+                    Card(
+                        shape = buttonShape,
+                        border = BorderStroke(1.dp, backButtonBorder),
+                        backgroundColor = backButtonBg,
+                        elevation = 0.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .clip(buttonShape)
+                            .clickable { onBack() }
                     ) {
-                        Text("1024 x 768")
-                    }
-
-                    TranslucentButton(
-                        onClick = { onSetWindowSize(1280.dp, 720.dp) },
-                        shape = RoundedCornerShape(buttonCorner)
-                    ) {
-                        Text("1280 x 720")
-                    }
-
-                    TranslucentButton(
-                        onClick = {
-                            val next = !isFullscreen
-                            isFullscreen = next
-                            onToggleFullscreen(next)
-                        },
-                        shape = RoundedCornerShape(buttonCorner)
-                    ) {
-                        Text(if (isFullscreen) "Sair de Tela Cheia" else "Tela Cheia")
-                    }
-
-                    // botão Voltar com cor cinzenta-escura e cantos arredondados proporcionais
-                    Button(
-                        onClick = onBack,
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = Color(0xFF2F2F2F),
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(buttonCorner)
-                    ) {
-                        Text("Voltar")
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("Voltar", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, letterSpacing = 1.sp, color = Color.LightGray)
+                        }
                     }
                 }
             }
