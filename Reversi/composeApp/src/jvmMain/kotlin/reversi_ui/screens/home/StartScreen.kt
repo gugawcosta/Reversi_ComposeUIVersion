@@ -38,13 +38,22 @@ import reversi.core.ReversiState
 import reversi.model.ReversiBoard
 import reversi.model.ReversiColor
 import reversi.model.mongoStringToBoard
-import reversi_data.mongodb.AppConfig
+import reversi_data.AppConfig
 import reversi_ui.screens.lobby.CreateGameScreen
-import reversi_ui.screens.lobby.EnterGameDialog
+import reversi_ui.screens.lobby.JoinGameScreen
 import java.util.*
 
+// Gera um ID único para a sessão atual
 val sessionUserId: String = UUID.randomUUID().toString()
 
+/**
+ * Tela inicial do jogo Reversi.
+ * Permite criar ou entrar em jogos, acessar o lobby e ajustar a fonte de dados.
+ * @param onGameStart Função chamada ao iniciar um jogo, recebe o jogo, nome e cor do jogador.
+ * @param onResolution Função chamada ao acessar a tela de resolução.
+ * @param onOpenLobby Função chamada ao abrir o lobby.
+ * @return Composable da tela inicial.
+ */
 @Composable
 fun StartScreen(
     onGameStart: (Reversi, String, ReversiColor) -> Unit,
@@ -80,7 +89,7 @@ fun StartScreen(
     }
 
     if (showJoinDialog) {
-        EnterGameDialog(
+        JoinGameScreen(
             errorMessage = joinErrorMessage,
             onInteraction = { joinErrorMessage = null },
             onDismiss = { showJoinDialog = false; joinErrorMessage = null },
@@ -210,6 +219,19 @@ fun StartScreen(
     }
 }
 
+/**
+ * Botão personalizado com estilo de destaque.
+ * Possui efeitos de hover, sombra e borda personalizada.
+ * @param text Texto exibido no botão.
+ * @param onClick Função chamada ao clicar no botão.
+ * @param modifier Modificador para o botão.
+ * @param background Cor de fundo do botão.
+ * @param borderColor Cor da borda do botão.
+ * @param textColor Cor do texto do botão (opcional).
+ * @param shape Forma do botão.
+ * @param contentPadding Espaçamento interno do botão.
+ * @return Composable do botão de destaque.
+ */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AccentButton(

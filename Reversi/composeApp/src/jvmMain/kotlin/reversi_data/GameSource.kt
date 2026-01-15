@@ -1,7 +1,10 @@
-package reversi_data.mongodb
+package reversi_data
 
 import reversi.core.Reversi
 import reversi.model.ReversiColor
+import reversi_data.local.LocalGameManager
+import reversi_data.model.GameState
+import reversi_data.mongodb.MongoGameManager
 
 /**
  * Interface que define as operações obrigatórias para qualquer fonte de dados (Local ou Cloud).

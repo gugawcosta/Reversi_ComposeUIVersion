@@ -8,10 +8,25 @@ import com.mongodb.client.model.Sorts
 import reversi.core.Reversi
 import reversi.model.ReversiColor
 import reversi.model.boardToMongoString
-import reversi_data.mongodb.MongoGameManager // Importa a Interface
+import reversi_data.model.GameState
+import reversi_data.IGameManager
 
+/**
+ * Gestor que lê e escreve estados de jogo numa base de dados MongoDB.
+ * Utiliza a coleção 'games' definida em MongoRepository.
+ */
 object MongoGameManager : IGameManager {
 
+    /**
+     * Cria um jogo na base de dados.
+     * Verifica se o nome do jogo já existe antes de criar.
+     * @param name Nome do jogo.
+     * @param game Instância do jogo Reversi.
+     * @param creatorColor Cor do jogador que criou o jogo.
+     * @param creatorId ID do jogador que criou o jogo.
+     * @param size Tamanho do tabuleiro.
+     * @return true se o jogo foi criado com sucesso, false caso contrário.
+     */
     override suspend fun createNewGame(name: String, game: Reversi, creatorColor: ReversiColor, creatorId: String, size: Int): Boolean =
         withContext(Dispatchers.IO) {
             try {
@@ -39,6 +54,13 @@ object MongoGameManager : IGameManager {
             }
         }
 
+    /**
+     * Permite a um jogador juntar-se a um jogo existente como 'Jogador 2'.
+     * Verifica se o jogo existe e se já não tem um 'Jogador 2'.
+     * @param gameName Nome do jogo.
+     * @param myId ID do jogador que está a tentar juntar-se.
+     * @return true se o jogador conseguiu juntar-se, false caso contrário.
+     */
     override suspend fun joinGameAsPlayer2(gameName: String, myId: String): Boolean =
         withContext(Dispatchers.IO) {
             try {
@@ -58,6 +80,12 @@ object MongoGameManager : IGameManager {
             }
         }
 
+    /**
+     * Atualiza o estado do jogo na base de dados.
+     * @param name Nome do jogo.
+     * @param game Instância do jogo Reversi.
+     * @return true se a atualização foi bem-sucedida, false caso contrário.
+     */
     override suspend fun updateGameState(name: String, game: Reversi): Boolean =
         withContext(Dispatchers.IO) {
             try {
@@ -78,6 +106,11 @@ object MongoGameManager : IGameManager {
             }
         }
 
+    /**
+     * Carrega o estado do jogo a partir da base de dados.
+     * @param name Nome do jogo.
+     * @return Instância de GameState se o jogo for encontrado, null caso contrário.
+     */
     override suspend fun loadGameState(name: String): GameState? =
         withContext(Dispatchers.IO) {
             try {
@@ -87,6 +120,12 @@ object MongoGameManager : IGameManager {
             }
         }
 
+    /**
+     * Obtém uma lista dos jogos mais recentes da base de dados.
+     * Limita a 50 jogos ordenados por timestamp decrescente.
+     * @return Lista de GameState.
+     * @see GameState
+     */
     override suspend fun getAllGames(): List<GameState> =
         withContext(Dispatchers.IO) {
             try {

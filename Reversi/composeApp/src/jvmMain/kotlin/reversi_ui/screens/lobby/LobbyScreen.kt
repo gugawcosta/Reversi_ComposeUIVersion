@@ -29,8 +29,8 @@ import reversi.core.ReversiState
 import reversi.model.ReversiBoard
 import reversi.model.ReversiColor
 import reversi.model.mongoStringToBoard
-import reversi_data.mongodb.AppConfig
-import reversi_data.mongodb.GameState
+import reversi_data.AppConfig
+import reversi_data.model.GameState
 import reversi_ui.screens.home.sessionUserId
 
 @Composable
@@ -43,7 +43,7 @@ fun LobbyScreen(
     var isLoading by remember { mutableStateOf(true) }
     val scaffoldState = rememberScaffoldState()
 
-    // OBTÉM O GESTOR ATIVO (Local ou Mongo)
+    // Usa o gameManager genérico para lobby
     val gameManager = AppConfig.activeManager
 
     fun loadGames() {

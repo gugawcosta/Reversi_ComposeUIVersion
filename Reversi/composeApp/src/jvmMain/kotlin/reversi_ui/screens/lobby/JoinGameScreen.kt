@@ -27,7 +27,7 @@ import androidx.compose.ui.window.Dialog
  * campo de texto, para limpar erros.
  */
 @Composable
-fun EnterGameDialog(
+fun JoinGameScreen(
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
     errorMessage: String? = null, // Recebe a mensagem de erro

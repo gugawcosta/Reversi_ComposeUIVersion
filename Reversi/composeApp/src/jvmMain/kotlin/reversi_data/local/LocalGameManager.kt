@@ -1,10 +1,13 @@
-package reversi_data.mongodb
+package reversi_data.local
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import reversi.core.Reversi
 import reversi.model.ReversiColor
+import reversi_data.model.GameState
+import reversi_data.IGameManager
 import java.io.File
+import kotlin.math.sqrt
 
 /**
  * Gestor que lê e escreve ficheiros na pasta local 'game_states'.
@@ -27,12 +30,13 @@ object LocalGameManager : IGameManager {
             try {
                 val lines = file.readLines()
                 // Parse simples do formato "Chave: Valor"
-                val name = lines.find { it.startsWith("Game:") }?.substringAfter(":")?.trim() ?: file.nameWithoutExtension
+                val name =
+                    lines.find { it.startsWith("Game:") }?.substringAfter(":")?.trim() ?: file.nameWithoutExtension
                 val turn = lines.find { it.startsWith("Turn:") }?.substringAfter(":")?.trim() ?: "BLACK"
                 val board = lines.find { it.startsWith("Board:") }?.substringAfter(":")?.trim() ?: ""
 
                 // Tenta descobrir o tamanho do tabuleiro pela raiz quadrada da string
-                val size = kotlin.math.sqrt(board.length.toDouble()).toInt()
+                val size = sqrt(board.length.toDouble()).toInt()
 
                 // Cria um GameState compatível com o Lobby
                 val state = GameState(

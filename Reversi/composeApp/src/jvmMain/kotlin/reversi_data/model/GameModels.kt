@@ -1,4 +1,4 @@
-package reversi_data.mongodb
+package reversi_data.model
 
 import org.bson.codecs.pojo.annotations.BsonId
 import org.bson.codecs.pojo.annotations.BsonProperty

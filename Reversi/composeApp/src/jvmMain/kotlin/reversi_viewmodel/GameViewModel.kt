@@ -51,10 +51,21 @@ class GameViewModel(
     val whiteCount: Int get() = currentState.score.white
     val gameOver: Boolean get() = currentState.isOver
 
+    /**
+     * Alterna entre mostrar ou não as possíveis jogadas no tabuleiro.
+     *
+     */
     fun toggleTargets() { showTargets = !showTargets }
 
+    /**
+     * Ativa ou desativa o auto-refresh para jogos multiplayer.
+     */
     fun toggleAutoRefresh() { if (isMultiplayer) autoRefreshEnabled = !autoRefreshEnabled }
 
+    /**
+     * Processa o clique numa célula do tabuleiro.
+     * @param cell Célula clicada.
+     */
     fun onCellClick(cell: Cell) {
         errorMessage = null
 
@@ -100,6 +111,9 @@ class GameViewModel(
         }
     }
 
+    /**
+     * Processa a ação de passar a vez.
+     */
     fun passTurn() {
         errorMessage = null
         if (isMultiplayer && currentPlayer != localPlayerColor) return
@@ -126,6 +140,9 @@ class GameViewModel(
         }
     }
 
+    /**
+     * Atualiza o estado do jogo a partir do servidor remoto.
+     */
     fun refreshGame() {
         if (!isMultiplayer) return
         if (isProcessingMove) return
@@ -167,14 +184,25 @@ class GameViewModel(
         }
     }
 
+    /**
+     * Atualiza o estado local do jogo.
+     * @param newState Novo estado do jogo.
+     */
     private fun updateLocalState(newState: ReversiState) {
         currentState = newState
     }
 
+    /**
+     * Atualiza o estado do jogo na instância do Reversi.
+     * @param newState Novo estado do jogo.
+     */
     private fun updateGameInternal(newState: ReversiState) {
         try { game.currentState = newState } catch (e: Exception) { }
     }
 
+    /**
+     * Salva um backup local do estado atual do jogo.
+     */
     fun saveLocalBackup() {
         try {
             val folder = File("game_states")
@@ -193,5 +221,10 @@ class GameViewModel(
         }
     }
 
+    /**
+     * Obtém a peça na célula especificada.
+     * @param cell Célula a consultar.
+     * @return Peça na célula ou null se estiver vazia.
+     */
     fun getPieceAt(cell: Cell): ReversiPiece? = currentState.pieces[cell]
 }

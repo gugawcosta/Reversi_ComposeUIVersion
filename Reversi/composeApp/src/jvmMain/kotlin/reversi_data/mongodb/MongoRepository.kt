@@ -7,6 +7,7 @@ import com.mongodb.client.model.Filters
 import org.bson.codecs.configuration.CodecRegistries.fromProviders
 import org.bson.codecs.configuration.CodecRegistries.fromRegistries
 import org.bson.codecs.pojo.PojoCodecProvider
+import reversi_data.model.GameState
 
 /**
  * Objeto singleton responsável por configurar a conexão com o MongoDB
@@ -15,7 +16,11 @@ import org.bson.codecs.pojo.PojoCodecProvider
  */
 
 object MongoRepository {
-    private const val URI = "mongodb+srv://alunotds:reversi2026@reversicluster.5qf1gsm.mongodb.net/?appName=ReversiCluster" // definida por mim (gustavo)
+    // Nota:
+    // Num ambiente de produção, esta Connection String seria injetada via
+    // Variáveis de Ambiente para não expor credenciais no controlo de versões.
+    // Mantido hardcoded aqui apenas para facilitar a correção/testes por parte do professor.
+    private const val URI = "mongodb+srv://alunotds:reversi2026@reversicluster.5qf1gsm.mongodb.net/?appName=ReversiCluster"
 
     // Configuração para permitir converter Classes Kotlin automaticamente
     private val pojoCodecRegistry = fromRegistries(

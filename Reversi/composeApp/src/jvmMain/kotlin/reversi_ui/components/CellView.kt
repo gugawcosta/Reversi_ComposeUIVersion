@@ -109,12 +109,12 @@ fun CellView(
         contentAlignment = Alignment.Center
     ) {
 
-        // AURA ANIMADA
+        //
         if (showHint && piece == null) {
             Canvas(modifier = Modifier) { }
         }
 
-        // CÍRCULO DAS POSSÍVEIS JOGADAS
+        // Possíveis jogadas
         if (showHint && piece == null) {
             Canvas(modifier = Modifier.size(pieceSize)) {
                 val size = size
@@ -124,7 +124,6 @@ fun CellView(
             }
         }
 
-        // ÁREA CLICÁVEL — APENAS A PEÇA
         Box(
             modifier = Modifier
                 .size(pieceSize)

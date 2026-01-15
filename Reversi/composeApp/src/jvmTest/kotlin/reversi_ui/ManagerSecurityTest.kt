@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test
 import com.mongodb.client.FindIterable
 import com.mongodb.client.result.UpdateResult
 import org.bson.conversions.Bson // Importante para o Mockk reconhecer o tipo
-import reversi_data.mongodb.GameState
+import reversi_data.model.GameState
 import reversi_data.mongodb.MongoGameManager
 import reversi_data.mongodb.MongoRepository
 

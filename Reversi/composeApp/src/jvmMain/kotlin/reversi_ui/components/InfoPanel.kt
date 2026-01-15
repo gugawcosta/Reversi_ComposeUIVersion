@@ -78,7 +78,7 @@ fun InfoPanel(viewModel: GameViewModel) {
                 text = if (viewModel.currentPlayer == ReversiColor.BLACK) "Pretas" else "Brancas",
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.SansSerif,
-                fontSize = 26.sp, // Aumentei um pouco para destaque
+                fontSize = 26.sp,
                 color = if (viewModel.currentPlayer == ReversiColor.BLACK) Color.Black else Color.DarkGray
             )
             Spacer(Modifier.height(20.dp))
