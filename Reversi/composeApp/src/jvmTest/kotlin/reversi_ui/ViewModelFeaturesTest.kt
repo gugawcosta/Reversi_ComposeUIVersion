@@ -1,4 +1,4 @@
-package reversi.presentation
+package reversi_ui
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

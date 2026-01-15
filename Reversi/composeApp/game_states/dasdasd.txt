@@ -1,0 +1,3 @@
+Game: dasdasd
+Turn: BLACK
+Board: ---B--WWWWWWWWWWWWWBWWWW-BBBBW-BBBBW

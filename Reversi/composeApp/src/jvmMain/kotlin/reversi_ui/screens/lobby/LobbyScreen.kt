@@ -1,10 +1,6 @@
 package reversi_ui.screens.lobby
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -28,22 +24,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-import reversi_data.mongodb.GameState
-import reversi_data.mongodb.MongoGameManager
 import reversi.core.Reversi
 import reversi.core.ReversiState
 import reversi.model.ReversiBoard
 import reversi.model.ReversiColor
 import reversi.model.mongoStringToBoard
+import reversi_data.mongodb.AppConfig
+import reversi_data.mongodb.GameState
 import reversi_ui.screens.home.sessionUserId
-
-/**
- * Ecrã do Lobby Online.
- * Mostra a lista de jogos disponíveis para entrar.
- * @param onJoinGame Função chamada quando o user entra num jogo.
- * Recebe o jogo carregado, o nome do jogo, e a cor do player.
- * @param onBack Função chamada quando o user quer voltar ao ecrã anterior.
- */
 
 @Composable
 fun LobbyScreen(
@@ -53,17 +41,15 @@ fun LobbyScreen(
     val scope = rememberCoroutineScope()
     var gamesList by remember { mutableStateOf<List<GameState>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
-
     val scaffoldState = rememberScaffoldState()
 
-    /**
-     * Carrega a lista de jogos do MongoDB.
-     * Atualiza o estado isLoading durante o processo.
-     */
+    // OBTÉM O GESTOR ATIVO (Local ou Mongo)
+    val gameManager = AppConfig.activeManager
+
     fun loadGames() {
         scope.launch {
             isLoading = true
-            gamesList = MongoGameManager.getAllGames()
+            gamesList = gameManager.getAllGames()
             isLoading = false
         }
     }
@@ -73,12 +59,9 @@ fun LobbyScreen(
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
-            // TRUQUE PARA CENTRAGEM PERFEITA:
-            // Usamos uma Box para sobrepor o Título ao TopAppBar.
-            // O TopAppBar fica por baixo (para dar a cor e os botões), e o Texto flutua no centro absoluto.
             Box(contentAlignment = Alignment.Center) {
                 TopAppBar(
-                    title = { Spacer(Modifier.fillMaxSize()) }, // Título vazio para manter a altura correta
+                    title = { Spacer(Modifier.fillMaxSize()) },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -93,22 +76,12 @@ fun LobbyScreen(
                     contentColor = Color.White,
                     elevation = 0.dp
                 )
-
-                // Este texto fica "solto" na Box, alinhado ao centro do ecrã inteiro
-                Text(
-                    text = "Lobby",
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    fontSize = 20.sp
-                )
+                Text("Lobby", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 20.sp)
             }
         }
     ) { padding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(Color(0xFF0F260F))
+            modifier = Modifier.fillMaxSize().padding(padding).background(Color(0xFF0F260F))
         ) {
             if (isLoading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -130,33 +103,25 @@ fun LobbyScreen(
                             gameState = gameItem,
                             onJoin = {
                                 scope.launch {
-                                    val canEnter = MongoGameManager.joinGameAsPlayer2(gameItem.gameName, sessionUserId)
+                                    // Usa o gameManager genérico
+                                    val canEnter = gameManager.joinGameAsPlayer2(gameItem.gameName, sessionUserId)
 
                                     if (!canEnter) {
-                                        scaffoldState.snackbarHostState.showSnackbar("Jogo cheio! Apenas os jogadores originais podem entrar.")
+                                        scaffoldState.snackbarHostState.showSnackbar("Jogo cheio ou inacessível.")
                                         return@launch
                                     }
 
                                     val size = if (gameItem.boardSize > 0) gameItem.boardSize else 8
                                     val loadedGame = Reversi(ReversiBoard(size, size))
-
                                     val newPieces = mongoStringToBoard(gameItem.board, loadedGame.board)
-
                                     val turnStr = gameItem.turn.uppercase()
                                     val turnColor = if (turnStr.contains("WHITE")) ReversiColor.WHITE else ReversiColor.BLACK
-
                                     val p1ColorStr = gameItem.p1Color.uppercase()
                                     val creatorColor = if (p1ColorStr.contains("WHITE")) ReversiColor.WHITE else ReversiColor.BLACK
-
                                     val myColor = if (gameItem.player1Id == sessionUserId) creatorColor else (if (creatorColor == ReversiColor.BLACK) ReversiColor.WHITE else ReversiColor.BLACK)
 
                                     try {
-                                        val newState = ReversiState(
-                                            pieces = newPieces,
-                                            currentTurn = turnColor,
-                                            consecutivePasses = 0,
-                                            board = loadedGame.board
-                                        )
+                                        val newState = ReversiState(newPieces, turnColor, 0, loadedGame.board)
                                         loadedGame.currentState = newState
                                     } catch (e: Exception) { e.printStackTrace() }
 
@@ -171,25 +136,15 @@ fun LobbyScreen(
     }
 }
 
-/**
- * Card Composable que representa um jogo no lobby.
- * Mostra o nome do jogo, estado do tabuleiro, criador, turno atual, e botão de entrar.
- * @param gameState Estado do jogo.
- * @param onJoin Função chamada quando o user clica para entrar no jogo.
- */
 @Composable
-fun GameLobbyCard(
-    gameState: GameState,
-    onJoin: () -> Unit
-) {
+fun GameLobbyCard(gameState: GameState, onJoin: () -> Unit) {
     val p1ColorStr = gameState.p1Color.uppercase()
     val creatorIsBlack = !p1ColorStr.contains("WHITE")
     val turnStr = gameState.turn.uppercase()
     val isBlackTurn = !turnStr.contains("WHITE")
 
     val isBoardFull = remember(gameState.board) {
-        !gameState.board.contains('E', ignoreCase = true) &&
-                !gameState.board.contains('-', ignoreCase = true)
+        !gameState.board.contains('E', ignoreCase = true) && !gameState.board.contains('-', ignoreCase = true)
     }
 
     val blackCount = gameState.board.count { it == 'B' }
@@ -300,11 +255,6 @@ fun GameLobbyCard(
     }
 }
 
-/**
- * Composable que desenha um mini tabuleiro de Reversi.
- * @param boardString String representando o estado do tabuleiro ('B' para preto, 'W' para branco, 'E' ou '-' para vazio).
- * @param boardSize Tamanho do tabuleiro.
- */
 @Composable
 fun MiniBoardCanvas(boardString: String, boardSize: Int) {
     Canvas(modifier = Modifier.fillMaxSize().padding(2.dp)) {

@@ -1,0 +1,3 @@
+Game: hello
+Turn: BLACK
+Board: --------BBB--BBBB-WWBWB--BBWW-------

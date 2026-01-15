@@ -42,7 +42,11 @@ fun BoardView(viewModel: GameViewModel) {
         .map { it.position }
         .toSet()
 
-    val legalMoves = if (viewModel.showTargets) legalMovesAll else emptySet<Cell>()
+    // Verifica se é Singleplayer OU se é a vez do Jogador Local
+    val isMyTurn = !viewModel.isMultiplayer || viewModel.currentPlayer == viewModel.localPlayerColor
+
+    // Só mostra os targets se o botão estiver ativo E for a tua vez
+    val legalMoves = if (viewModel.showTargets && isMyTurn) legalMovesAll else emptySet<Cell>()
 
     var invalidPos by remember { mutableStateOf<Cell?>(null) }
 
@@ -72,6 +76,8 @@ fun BoardView(viewModel: GameViewModel) {
                             col = col + 1,
                             onClick = { r, c ->
                                 val clicked = Cell(r, c)
+                                // Nota: Para validar o clique, usamos legalMovesAll (a regra do jogo),
+                                // mas para mostrar o erro visual usamos a lógica visual.
                                 if (clicked !in legalMovesAll) {
                                     invalidPos = clicked
                                 } else {

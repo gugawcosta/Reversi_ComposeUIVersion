@@ -1,4 +1,4 @@
-package reversi.domain
+package reversi_ui
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
