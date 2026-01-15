@@ -1,4 +1,4 @@
-package reversi_ui
+package reversi_ui.screens.lobby
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -69,7 +69,7 @@ fun EnterGameDialog(
                 // Conteúdo
                 Column(modifier = Modifier.padding(24.dp)) {
                     Text(
-                        text = "Introduza o nome da sala:",
+                        text = "Introduza o nome do jogo:",
                         color = Color.DarkGray,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium
@@ -93,7 +93,7 @@ fun EnterGameDialog(
                             cursorColor = Color(0xFF1B5E20),
                             textColor = Color.Black
                         ),
-                        placeholder = { Text("Ex: Sala1", color = Color.Gray) }
+                        placeholder = { Text("Ex: Jogo1", color = Color.Gray) }
                     )
 
                     // Exibir Erro

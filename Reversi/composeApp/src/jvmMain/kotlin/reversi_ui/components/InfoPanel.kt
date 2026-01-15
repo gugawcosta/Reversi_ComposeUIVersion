@@ -1,4 +1,4 @@
-package reversi_ui
+package reversi_ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import reversi.model.ReversiColor
+import reversi_viewmodel.GameViewModel
 
 /**
  * Painel de informação lateral do jogo.
@@ -89,7 +90,7 @@ fun InfoPanel(viewModel: GameViewModel) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Brancas -> ", color = Color.Gray, fontSize = 20.sp)
             Text(
-                text = "${viewModel.blackCount}",
+                text = "${viewModel.whiteCount}",
                 fontWeight = FontWeight.Bold,
                 fontSize = 22.sp,
                 color = Color.Gray
@@ -98,7 +99,7 @@ fun InfoPanel(viewModel: GameViewModel) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Pretas -> ", color = Color.Black, fontSize = 20.sp)
             Text(
-                text = "${viewModel.whiteCount}",
+                text = "${viewModel.blackCount}",
                 fontWeight = FontWeight.Bold,
                 fontSize = 22.sp,
                 color = Color.Black

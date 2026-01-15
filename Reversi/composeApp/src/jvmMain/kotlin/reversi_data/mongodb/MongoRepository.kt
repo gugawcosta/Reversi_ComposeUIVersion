@@ -1,4 +1,4 @@
-package mongodb
+package reversi_data.mongodb
 import com.mongodb.ConnectionString
 import com.mongodb.MongoClientSettings
 import com.mongodb.client.MongoClients
@@ -37,9 +37,7 @@ object MongoRepository {
 
     /**
      * Exemplos de operações CRUD básicas na coleção de jogos.
-     * Estas funções podem ser expandidas conforme necessário.
      */
-
     // Exemplo: Criar um jogo
     fun saveGame(game: GameState) {
         gamesCollection.insertOne(game)
@@ -60,7 +58,6 @@ fun main() {
     try {
         // Tenta apenas contar quantos jogos existem
         val count = MongoRepository.gamesCollection.countDocuments()
-
         println("SUCESSO! Conectado ao MongoDB. Jogos encontrados: $count")
     } catch (e: Exception) {
         println("ERRO: Não foi possível conectar.")

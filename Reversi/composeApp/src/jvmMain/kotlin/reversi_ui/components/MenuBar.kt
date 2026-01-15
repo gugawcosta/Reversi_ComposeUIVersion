@@ -1,4 +1,4 @@
-package reversi_ui
+package reversi_ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,36 +17,21 @@ import androidx.compose.ui.unit.sp
 
 /**
  * Barra de Menu superior da aplicação.
- * Contém os menus: Game, Play, Options.
- * @param onNewGame Ação ao iniciar um novo jogo.
- * @param onJoinGame Ação ao entrar num jogo multiplayer.
+ * Contém os menus: Game e Options (simplificados).
  * @param onRefresh Ação ao atualizar o estado do jogo.
  * @param onExit Ação ao sair do jogo.
- * @param onPass Ação ao passar o turno.
- * @param canPass Controla se o botão Pass está ativo.
- * @param onShowTargetsToggle Ação ao alternar a exibição de alvos.
- * @param isShowTargetsOn Estado atual da exibição de alvos.
  * @param onAutoRefreshToggle Ação ao alternar o auto-refresh.
  * @param isAutoRefreshOn Estado atual do auto-refresh.
  * @param canRefresh Controla se o botão Refresh está ativo.
  * @param modifier Modificador para estilização adicional.
- * @return Composable da barra de menu.
  */
 @Composable
 fun MenuBar(
     // Ações do Menu Game
-    onNewGame: () -> Unit,
-    onJoinGame: () -> Unit = {}, // Default vazio por enquanto
     onRefresh: () -> Unit,
     onExit: () -> Unit,
 
-    // Ações do Menu Play
-    onPass: () -> Unit,
-    canPass: Boolean, // Controla se o botão Pass está ativo
-
     // Ações do Menu Options
-    onShowTargetsToggle: () -> Unit,
-    isShowTargetsOn: Boolean,
     onAutoRefreshToggle: () -> Unit,
     isAutoRefreshOn: Boolean,
 
@@ -70,20 +55,12 @@ fun MenuBar(
         Row(
             modifier = Modifier.padding(horizontal = 4.dp)
         ) {
-            // Menus da Barra: Game, Play, Options
+            // Menu: Game
             MenuDropdown(label = "Game") { closeMenu ->
-                DropdownMenuItem(
-                    text = { Text("New") },
-                    onClick = { closeMenu(); onNewGame() }
-                )
-                DropdownMenuItem(
-                    text = { Text("Join") },
-                    onClick = { closeMenu(); onJoinGame() }
-                )
                 DropdownMenuItem(
                     text = { Text("Refresh") },
                     onClick = { closeMenu(); onRefresh() },
-                    enabled = canRefresh // [Requisito]: Só ativo se autorefresh OFF e não for minha vez
+                    enabled = canRefresh
                 )
                 HorizontalDivider()
                 DropdownMenuItem(
@@ -92,22 +69,8 @@ fun MenuBar(
                 )
             }
 
-            MenuDropdown(label = "Play") { closeMenu ->
-                DropdownMenuItem(
-                    text = { Text("Pass") },
-                    onClick = { closeMenu(); onPass() },
-                    enabled = canPass // [Requisito]: Só ativo se não houver jogadas possíveis
-                )
-            }
-
+            // Menu: Options
             MenuDropdown(label = "Options") { closeMenu ->
-                DropdownMenuItem(
-                    text = {
-                        val check = if (isShowTargetsOn) "✔ " else ""
-                        Text("${check}Show Targets")
-                    },
-                    onClick = { closeMenu(); onShowTargetsToggle() }
-                )
                 DropdownMenuItem(
                     text = {
                         val check = if (isAutoRefreshOn) "✔ " else ""
@@ -122,9 +85,6 @@ fun MenuBar(
 
 /**
  * Função auxiliar para criar os botões do menu e evitar repetição de código.
- * @param label Texto do botão do menu.
- * @param content Conteúdo do menu dropdown.
- * @return Composable do menu dropdown.
  */
 @Composable
 fun MenuDropdown(
@@ -150,7 +110,6 @@ fun MenuDropdown(
             expanded = isOpen.value,
             onDismissRequest = { isOpen.value = false }
         ) {
-            // Passamos a função de fechar para dentro dos itens
             content { isOpen.value = false }
         }
     }

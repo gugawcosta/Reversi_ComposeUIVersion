@@ -1,4 +1,4 @@
-package reversi_ui
+package reversi_app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -19,6 +19,10 @@ import reversi.composeapp.generated.resources.Res
 import reversi.composeapp.generated.resources.reversi
 import reversi.core.Reversi
 import reversi.model.ReversiColor
+import reversi_ui.screens.game.GameApp
+import reversi_ui.screens.lobby.LobbyScreen
+import reversi_ui.screens.settings.ResolutionScreen
+import reversi_ui.screens.home.StartScreen
 
 /**
  * Ponto de entrada da aplicação Reversi com Compose Multiplataforma.
@@ -39,13 +43,13 @@ import reversi.model.ReversiColor
 
 fun main() = application {
     val windowState = rememberWindowState(
-        size = DpSize(800.dp, 600.dp),
+        size = DpSize(1024.dp, 768.dp),
         position = WindowPosition.Aligned(Alignment.Center)
     )
 
     Window(
         onCloseRequest = ::exitApplication,
-        title = "Reversi Multiplayer",
+        title = "Reversi",
         icon = painterResource(Res.drawable.reversi),
         state = windowState,
         resizable = false

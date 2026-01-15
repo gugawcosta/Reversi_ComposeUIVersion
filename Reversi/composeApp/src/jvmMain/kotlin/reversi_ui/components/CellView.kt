@@ -1,4 +1,4 @@
-package reversi_ui
+package reversi_ui.components
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -29,6 +29,15 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import reversi.model.ReversiColor
 
+/**
+ * Composable que representa uma célula do tabuleiro do jogo Reversi.
+ * @param piece Cor da peça na célula (preto, branco ou nulo).
+ * @param showHint Indica se deve mostrar as jogadas possíveis.
+ * @param hintColor Cor da dica de jogada possível.
+ * @param row Linha da célula.
+ * @param col Coluna da célula.
+ * @param onClick Função a ser chamada quando a célula for clicada.
+ */
 @Composable
 fun CellView(
     piece: ReversiColor?,
@@ -44,7 +53,7 @@ fun CellView(
     val colorHint = when (hintColor) {
         ReversiColor.BLACK -> Color.Black.copy(alpha = 0.5f)
         ReversiColor.WHITE -> Color.White.copy(alpha = 0.5f)
-        else -> Color.Yellow.copy(alpha = 0.5f) // como e pedido no enunciado (tds2.jar)
+        else -> Color.Yellow.copy(alpha = 0.5f)
     }
 
     // Animação da aura
@@ -77,7 +86,7 @@ fun CellView(
 
     val density = LocalDensity.current.density
 
-    // Dispara animação apenas quando houver flip (prev != null && new != null && prev != new)
+    // Dispara animação apenas quando houver flip
     LaunchedEffect(currentPiece.value) {
         val newPiece = currentPiece.value
         val old = prevPiece
@@ -100,47 +109,35 @@ fun CellView(
         contentAlignment = Alignment.Center
     ) {
 
-        // AURA ANIMADA (não clicável)
+        // AURA ANIMADA
         if (showHint && piece == null) {
-            Canvas(modifier = Modifier) {
-            }
+            Canvas(modifier = Modifier) { }
         }
 
-        // CÍRCULO DAS POSSÍVEIS JOGADAS (não clicável)
+        // CÍRCULO DAS POSSÍVEIS JOGADAS
         if (showHint && piece == null) {
             Canvas(modifier = Modifier.size(pieceSize)) {
                 val size = size
                 val radius = size.minDimension / 2
-                drawCircle(
-                    color = colorHint.copy(alpha = auraAlpha),
-                    radius = radius * auraScale
-                )
-                drawCircle(
-                    color = colorHint,
-                    radius = radius
-                )
+                drawCircle(color = colorHint.copy(alpha = auraAlpha), radius = radius * auraScale)
+                drawCircle(color = colorHint, radius = radius)
             }
         }
 
-        // ÁREA CLICÁVEL — APENAS A PEÇA (40.dp)
+        // ÁREA CLICÁVEL — APENAS A PEÇA
         Box(
             modifier = Modifier
                 .size(pieceSize)
                 .clip(RoundedCornerShape(40.dp))
-                .clickable { onClick(row, col) },   // clicável apenas na área da peça
+                .clickable { onClick(row, col) },
             contentAlignment = Alignment.Center
         ) {
-            // Se não houver peça, nada a desenhar
             if (piece == null && prevPiece == null) return@Box
 
-            // Determina rotação atual
             val rotation = if (isFlipping) rotationAnim.value else 0f
 
-            // Escolhe cor a desenhar com base no progresso da rotação:
-            // até 90° mostra a cor antiga, depois mostra a nova
             val colorToDraw: Color = when {
                 isFlipping -> {
-                    // old guaranteed non-null enquanto a condição de flip foi satisfeita
                     val old = prevPiece
                     if (rotation <= 90f) {
                         if (old == ReversiColor.BLACK) Color.Black else Color.White
@@ -149,12 +146,10 @@ fun CellView(
                     }
                 }
                 else -> {
-                    // Sem animação: mostra a peça atual (pode ser null >> nada)
                     if (piece == ReversiColor.BLACK) Color.Black else Color.White
                 }
             }
 
-            // Canvas com transformação 3D (rotationY)
             Canvas(
                 modifier = Modifier
                     .size(pieceSize)
@@ -163,8 +158,6 @@ fun CellView(
                         cameraDistance = 8 * density
                     }
             ) {
-                // Se não houver cor (caso peça nula e prevPiece nula), não desenhar
-                // Mas aqui garantimos que existe cor
                 drawCircle(color = colorToDraw)
             }
         }

@@ -1,4 +1,4 @@
-package reversi_ui
+package reversi_ui.screens.settings
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
@@ -27,12 +27,12 @@ import androidx.compose.ui.unit.sp
 
 /**
  * Tela de seleção de resolução e modo de tela cheia.
- *
- * @param onBack Função chamada ao clicar em "Voltar".
- * @param onSetWindowSize Função chamada ao selecionar uma resolução.
+ * Layout ajustado para agrupar resoluções no topo e controlos em baixo.
+ * @param onBack Ação ao clicar em Voltar.
+ * @param onSetWindowSize Ação ao definir uma nova resolução.
  * Recebe a largura e altura em Dp.
- * @param onToggleFullscreen Função chamada ao alternar o modo tela cheia.
- * Recebe true para ativar e false para desativar.
+ * @param onToggleFullscreen Ação ao alternar o modo de tela cheia.
+ * Recebe true para entrar em tela cheia, false para sair.
  */
 @Composable
 fun ResolutionScreen(
@@ -67,6 +67,12 @@ fun ResolutionScreen(
     val disabledButtonBg = Color(0xFF1B5E20).copy(alpha = 0.4f)
     val disabledText = Color.White.copy(alpha = 0.4f)
 
+    // Estilo de texto comum
+    val buttonTextStyle = TextStyle(
+        fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = 1.2.sp,
+        shadow = Shadow(color = Color.Black.copy(alpha = 0.25f), offset = Offset(1f, 1f), blurRadius = 2f)
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -78,7 +84,7 @@ fun ResolutionScreen(
                 .clip(RoundedCornerShape(24.dp))
                 .padding(16.dp)
                 .fillMaxWidth(0.86f)
-                .height(520.dp),
+                .height(600.dp),
             elevation = 8.dp,
             backgroundColor = Color.Transparent
         ) {
@@ -97,15 +103,13 @@ fun ResolutionScreen(
             ) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceBetween
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Título
                     Box(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        val label = "Resoluções Disponíveis:"
+                        val label = "Resoluções Disponíveis"
                         val outlineColor = Color.Black.copy(alpha = 0.72f)
                         val mainStyle = TextStyle(
                             brush = Brush.horizontalGradient(listOf(Color(0xFF9BE49A), Color(0xFF49A64C), Color(0xFF2F7F33))),
@@ -120,72 +124,62 @@ fun ResolutionScreen(
                         Text(label, style = mainStyle, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                    val buttonTextStyle = TextStyle(
-                        fontWeight = FontWeight.Bold, fontSize = 18.sp, letterSpacing = 1.2.sp,
-                        shadow = Shadow(color = Color.Black.copy(alpha = 0.25f), offset = Offset(1f, 1f), blurRadius = 2f)
-                    )
-
-                    // Botões de resolução
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-
-                        // 800 x 600
-                        Card(
-                            shape = buttonShape,
-                            border = BorderStroke(2.dp, if(!isFullscreen) vividButtonBorder else Color.Transparent),
-                            backgroundColor = if(!isFullscreen) vividButtonBg else disabledButtonBg,
-                            elevation = if(!isFullscreen) 6.dp else 0.dp,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(55.dp)
-                                .clip(buttonShape)
-                                .clickable(enabled = !isFullscreen) { onSetWindowSize(800.dp, 600.dp) }
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text("800 x 600", style = buttonTextStyle.copy(color = if(!isFullscreen) Color.White else disabledText))
-                            }
-                        }
-
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         // 1024 x 768
-                        Card(
-                            shape = buttonShape,
-                            border = BorderStroke(2.dp, if(!isFullscreen) vividButtonBorder else Color.Transparent),
-                            backgroundColor = if(!isFullscreen) vividButtonBg else disabledButtonBg,
-                            elevation = if(!isFullscreen) 6.dp else 0.dp,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(55.dp)
-                                .clip(buttonShape)
-                                .clickable(enabled = !isFullscreen) { onSetWindowSize(1024.dp, 768.dp) }
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text("1024 x 768", style = buttonTextStyle.copy(color = if(!isFullscreen) Color.White else disabledText))
-                            }
-                        }
+                        ResolutionButton(
+                            text = "1024 x 768",
+                            isActive = !isFullscreen,
+                            buttonShape = buttonShape,
+                            activeBorder = vividButtonBorder,
+                            activeBg = vividButtonBg,
+                            disabledBg = disabledButtonBg,
+                            textStyle = buttonTextStyle,
+                            disabledTextColor = disabledText,
+                            onClick = { onSetWindowSize(1024.dp, 768.dp) }
+                        )
 
                         // 1280 x 720
-                        Card(
-                            shape = buttonShape,
-                            border = BorderStroke(2.dp, if(!isFullscreen) vividButtonBorder else Color.Transparent),
-                            backgroundColor = if(!isFullscreen) vividButtonBg else disabledButtonBg,
-                            elevation = if(!isFullscreen) 6.dp else 0.dp,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(55.dp)
-                                .clip(buttonShape)
-                                .clickable(enabled = !isFullscreen) { onSetWindowSize(1280.dp, 720.dp) }
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text("1280 x 720", style = buttonTextStyle.copy(color = if(!isFullscreen) Color.White else disabledText))
-                            }
-                        }
+                        ResolutionButton(
+                            text = "1280 x 720",
+                            isActive = !isFullscreen,
+                            buttonShape = buttonShape,
+                            activeBorder = vividButtonBorder,
+                            activeBg = vividButtonBg,
+                            disabledBg = disabledButtonBg,
+                            textStyle = buttonTextStyle,
+                            disabledTextColor = disabledText,
+                            onClick = { onSetWindowSize(1280.dp, 720.dp) }
+                        )
 
+                        // 1600 x 900
+                        ResolutionButton(
+                            text = "1600 x 900",
+                            isActive = !isFullscreen,
+                            buttonShape = buttonShape,
+                            activeBorder = vividButtonBorder,
+                            activeBg = vividButtonBg,
+                            disabledBg = disabledButtonBg,
+                            textStyle = buttonTextStyle,
+                            disabledTextColor = disabledText,
+                            onClick = { onSetWindowSize(1600.dp, 900.dp) }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         // Botão Tela Cheia
                         val fsColor = if(isFullscreen) Color(0xFFFFD54F) else Color.White
                         val fsBorder = if(isFullscreen) Color(0xFFFFD54F) else vividButtonBorder
 
-                        // Este botão está sempre ativo
                         Card(
                             shape = buttonShape,
                             border = BorderStroke(2.dp, fsBorder),
@@ -193,7 +187,7 @@ fun ResolutionScreen(
                             elevation = 6.dp,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(55.dp)
+                                .height(50.dp)
                                 .clip(buttonShape)
                                 .clickable {
                                     val next = !isFullscreen
@@ -208,28 +202,65 @@ fun ResolutionScreen(
                                 )
                             }
                         }
-                    }
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    // Botão Voltar
-                    Card(
-                        shape = buttonShape,
-                        border = BorderStroke(1.dp, backButtonBorder),
-                        backgroundColor = backButtonBg,
-                        elevation = 0.dp,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                            .clip(buttonShape)
-                            .clickable { onBack() }
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text("Voltar", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, letterSpacing = 1.sp, color = Color.LightGray)
+                        Card(
+                            shape = buttonShape,
+                            border = BorderStroke(1.dp, backButtonBorder),
+                            backgroundColor = backButtonBg,
+                            elevation = 0.dp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .clip(buttonShape)
+                                .clickable { onBack() }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("Voltar", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, letterSpacing = 1.sp, color = Color.LightGray)
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Componente auxiliar para evitar repetição de código nos botões de resolução
+ * @param text Texto do botão.
+ * @param isActive Se o botão está ativo (clicável).
+ * @param buttonShape Forma do botão.
+ * @param activeBorder Cor da borda quando ativo.
+ * @param activeBg Cor de fundo quando ativo.
+ * @param disabledBg Cor de fundo quando desativado.
+ * @param textStyle Estilo do texto.
+ * @param disabledTextColor Cor do texto quando desativado.
+ * @param onClick Ação ao clicar no botão.
+ */
+@Composable
+fun ResolutionButton(
+    text: String,
+    isActive: Boolean,
+    buttonShape: RoundedCornerShape,
+    activeBorder: Color,
+    activeBg: Color,
+    disabledBg: Color,
+    textStyle: TextStyle,
+    disabledTextColor: Color,
+    onClick: () -> Unit
+) {
+    Card(
+        shape = buttonShape,
+        border = BorderStroke(2.dp, if(isActive) activeBorder else Color.Transparent),
+        backgroundColor = if(isActive) activeBg else disabledBg,
+        elevation = if(isActive) 6.dp else 0.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .clip(buttonShape)
+            .clickable(enabled = isActive, onClick = onClick)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(text, style = textStyle.copy(color = if(isActive) Color.White else disabledTextColor))
         }
     }
 }

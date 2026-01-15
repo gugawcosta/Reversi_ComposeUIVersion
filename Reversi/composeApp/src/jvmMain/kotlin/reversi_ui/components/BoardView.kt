@@ -1,4 +1,4 @@
-package reversi_ui
+package reversi_ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,16 +21,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import reversi.core.BOARD_HEIGHT
-import reversi.core.BOARD_WIDTH
 import reversi.core.reversiGetLegalMoves
 import reversi.framework.Cell
+import reversi_viewmodel.GameViewModel
 import kotlin.collections.emptySet
+
+/**
+ * Composable que representa o tabuleiro do jogo Reversi.
+ * @param viewModel ViewModel do jogo.
+ */
 
 @Composable
 fun BoardView(viewModel: GameViewModel) {
-    val rows = BOARD_HEIGHT
-    val cols = BOARD_WIDTH
+    val boardSize = viewModel.game.board.size
+    val rows = boardSize
+    val cols = boardSize
 
     val legalMovesAll: Set<Cell?> = viewModel.currentState
         .reversiGetLegalMoves(viewModel.game.board)
@@ -80,7 +85,7 @@ fun BoardView(viewModel: GameViewModel) {
         }
     }
 
-    @Suppress("AssignedValueIsNeverRead")
+    // Popup de Jogada Inválida
     if (invalidPos != null) {
         AlertDialog(
             onDismissRequest = { invalidPos = null },
@@ -100,8 +105,6 @@ fun BoardView(viewModel: GameViewModel) {
                         append("Mostrar jogadas")
                     }
                     append("' para revelar as células (válidas) onde poderá jogar.")
-                    for (move in viewModel.currentState.legalMoves)
-                        println("Legal move at: [${move.position?.row}; ${move.position?.col}]\n")
                 })
             },
             confirmButton = {
@@ -112,4 +115,3 @@ fun BoardView(viewModel: GameViewModel) {
         )
     }
 }
-

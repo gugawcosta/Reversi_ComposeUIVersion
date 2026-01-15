@@ -1,4 +1,4 @@
-package reversi_ui
+package reversi_ui.screens.lobby
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -28,21 +28,23 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-import mongodb.GameState
-import mongodb.MongoGameManager
+import reversi_data.mongodb.GameState
+import reversi_data.mongodb.MongoGameManager
 import reversi.core.Reversi
+import reversi.core.ReversiState
 import reversi.model.ReversiBoard
 import reversi.model.ReversiColor
 import reversi.model.mongoStringToBoard
+import reversi_ui.screens.home.sessionUserId
 
 /**
  * Ecrã do Lobby Online.
  * Mostra a lista de jogos disponíveis para entrar.
- *
- * @param onJoinGame Função chamada quando o utilizador entra num jogo.
- * Recebe o jogo carregado, o nome do jogo e a cor do jogador.
- * @param onBack Função chamada quando o utilizador quer voltar ao ecrã anterior.
+ * @param onJoinGame Função chamada quando o user entra num jogo.
+ * Recebe o jogo carregado, o nome do jogo, e a cor do player.
+ * @param onBack Função chamada quando o user quer voltar ao ecrã anterior.
  */
+
 @Composable
 fun LobbyScreen(
     onJoinGame: (Reversi, String, ReversiColor) -> Unit,
@@ -52,7 +54,12 @@ fun LobbyScreen(
     var gamesList by remember { mutableStateOf<List<GameState>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Função para carregar jogos
+    val scaffoldState = rememberScaffoldState()
+
+    /**
+     * Carrega a lista de jogos do MongoDB.
+     * Atualiza o estado isLoading durante o processo.
+     */
     fun loadGames() {
         scope.launch {
             isLoading = true
@@ -61,42 +68,48 @@ fun LobbyScreen(
         }
     }
 
-    // Carregar ao entrar
-    LaunchedEffect(Unit) {
-        loadGames()
-    }
+    LaunchedEffect(Unit) { loadGames() }
 
-    // UI do Lobby
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF0F260F))
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp)
-        ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
-                }
-
-                Text(
-                    text = "Lobby",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
+    Scaffold(
+        scaffoldState = scaffoldState,
+        topBar = {
+            // TRUQUE PARA CENTRAGEM PERFEITA:
+            // Usamos uma Box para sobrepor o Título ao TopAppBar.
+            // O TopAppBar fica por baixo (para dar a cor e os botões), e o Texto flutua no centro absoluto.
+            Box(contentAlignment = Alignment.Center) {
+                TopAppBar(
+                    title = { Spacer(Modifier.fillMaxSize()) }, // Título vazio para manter a altura correta
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { loadGames() }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Atualizar")
+                        }
+                    },
+                    backgroundColor = Color(0xFF1B5E20),
+                    contentColor = Color.White,
+                    elevation = 0.dp
                 )
 
-                IconButton(onClick = { loadGames() }) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Atualizar", tint = Color.White)
-                }
+                // Este texto fica "solto" na Box, alinhado ao centro do ecrã inteiro
+                Text(
+                    text = "Lobby",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    fontSize = 20.sp
+                )
             }
-
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(Color(0xFF0F260F))
+        ) {
             if (isLoading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = Color(0xFF4CAF50))
@@ -106,20 +119,27 @@ fun LobbyScreen(
                     Text("Nenhum jogo encontrado.", color = Color.Gray)
                 }
             } else {
-                // Lista de Jogos em Grelha
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 160.dp), // Responsivo
+                    columns = GridCells.Adaptive(minSize = 160.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
+                    contentPadding = PaddingValues(16.dp)
                 ) {
                     items(gamesList) { gameItem ->
                         GameLobbyCard(
                             gameState = gameItem,
                             onJoin = {
                                 scope.launch {
-                                    // Lógica de Join
-                                    val loadedGame = Reversi(ReversiBoard(8, 8))
+                                    val canEnter = MongoGameManager.joinGameAsPlayer2(gameItem.gameName, sessionUserId)
+
+                                    if (!canEnter) {
+                                        scaffoldState.snackbarHostState.showSnackbar("Jogo cheio! Apenas os jogadores originais podem entrar.")
+                                        return@launch
+                                    }
+
+                                    val size = if (gameItem.boardSize > 0) gameItem.boardSize else 8
+                                    val loadedGame = Reversi(ReversiBoard(size, size))
+
                                     val newPieces = mongoStringToBoard(gameItem.board, loadedGame.board)
 
                                     val turnStr = gameItem.turn.uppercase()
@@ -128,12 +148,10 @@ fun LobbyScreen(
                                     val p1ColorStr = gameItem.p1Color.uppercase()
                                     val creatorColor = if (p1ColorStr.contains("WHITE")) ReversiColor.WHITE else ReversiColor.BLACK
 
-                                    // A minha cor é a oposta do criador
-                                    val myColor = if (creatorColor == ReversiColor.BLACK) ReversiColor.WHITE else ReversiColor.BLACK
+                                    val myColor = if (gameItem.player1Id == sessionUserId) creatorColor else (if (creatorColor == ReversiColor.BLACK) ReversiColor.WHITE else ReversiColor.BLACK)
 
-                                    // Atualizar estado
                                     try {
-                                        val newState = reversi.core.ReversiState(
+                                        val newState = ReversiState(
                                             pieces = newPieces,
                                             currentTurn = turnColor,
                                             consecutivePasses = 0,
@@ -154,30 +172,26 @@ fun LobbyScreen(
 }
 
 /**
- * Card individual para cada jogo no Lobby.
- * Mostra o nome do jogo, mini tabuleiro, criador, turno e botão de entrar.
- * @param gameState Estado do jogo a mostrar.
- * @param onJoin Função chamada quando o utilizador clica em "Entrar".
+ * Card Composable que representa um jogo no lobby.
+ * Mostra o nome do jogo, estado do tabuleiro, criador, turno atual, e botão de entrar.
+ * @param gameState Estado do jogo.
+ * @param onJoin Função chamada quando o user clica para entrar no jogo.
  */
 @Composable
 fun GameLobbyCard(
     gameState: GameState,
     onJoin: () -> Unit
 ) {
-    // Determinar cores e lógica básica
     val p1ColorStr = gameState.p1Color.uppercase()
     val creatorIsBlack = !p1ColorStr.contains("WHITE")
     val turnStr = gameState.turn.uppercase()
     val isBlackTurn = !turnStr.contains("WHITE")
 
-    // Lógica do fim do jogo
-    // 1. Verificar se acabou (tabuleiro cheio ou sem vazios)
     val isBoardFull = remember(gameState.board) {
         !gameState.board.contains('E', ignoreCase = true) &&
                 !gameState.board.contains('-', ignoreCase = true)
     }
 
-    // 2. Calcular Vencedor
     val blackCount = gameState.board.count { it == 'B' }
     val whiteCount = gameState.board.count { it == 'W' }
 
@@ -189,10 +203,7 @@ fun GameLobbyCard(
         }
     }
 
-    // Configuração Visual
     val cardShape = RoundedCornerShape(16.dp)
-
-    // Texto e cor do botão
     val btnText = if (isBoardFull) "JOGO TERMINADO" else "ENTRAR"
     val btnColor = if (isBoardFull) Color.Gray else Color(0xFF4CAF50)
 
@@ -201,7 +212,6 @@ fun GameLobbyCard(
             .fillMaxWidth()
             .height(240.dp)
             .clip(cardShape)
-            // Clique bloqueado se o jogo acabou
             .clickable(enabled = !isBoardFull, onClick = onJoin),
         shape = cardShape,
         color = Color(0xFF1B5E20),
@@ -209,13 +219,10 @@ fun GameLobbyCard(
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.3f))
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
+            modifier = Modifier.fillMaxSize().padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // 1. Título do Jogo
             Text(
                 text = gameState.gameName,
                 style = MaterialTheme.typography.h6,
@@ -225,7 +232,6 @@ fun GameLobbyCard(
                 overflow = TextOverflow.Ellipsis
             )
 
-            // 2. Mini Tabuleiro
             Box(
                 modifier = Modifier
                     .size(100.dp)
@@ -233,63 +239,41 @@ fun GameLobbyCard(
                     .background(Color(0xFF2E7D32))
                     .border(1.dp, Color.Black.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
             ) {
-                MiniBoardCanvas(boardString = gameState.board)
+                val size = if (gameState.boardSize > 0) gameState.boardSize else 8
+                MiniBoardCanvas(boardString = gameState.board, boardSize = size)
 
-                // Overlay de Cadeado
                 if (isBoardFull) {
                     Box(
                         modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Fechado",
-                            tint = Color.White.copy(alpha = 0.9f)
-                        )
+                        Icon(Icons.Default.Lock, contentDescription = "Fechado", tint = Color.White.copy(alpha = 0.9f))
                     }
                 }
             }
 
-            // 3. Informações do Jogo
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Esquerda: Criador
                 Column(horizontalAlignment = Alignment.Start) {
                     Text("Criador:", fontSize = 10.sp, color = Color.LightGray)
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            shape = CircleShape,
-                            color = if (creatorIsBlack) Color.Black else Color.White,
-                            modifier = Modifier.size(8.dp)
-                        ) {}
+                        Surface(shape = CircleShape, color = if (creatorIsBlack) Color.Black else Color.White, modifier = Modifier.size(8.dp)) {}
                         Spacer(Modifier.width(4.dp))
                         Text(if (creatorIsBlack) "Pretas" else "Brancas", fontSize = 11.sp, color = Color.White)
                     }
                 }
 
-                // Direita: Turno OU Vencedor
                 Column(horizontalAlignment = Alignment.End) {
                     if (isBoardFull) {
-                        // Mostra o Vencedor
                         Text("Vencedor:", fontSize = 10.sp, color = Color.LightGray)
-                        Text(
-                            text = resultText,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFFFD700) // Destacar a vitória
-                        )
+                        Text(text = resultText, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFFD700))
                     } else {
-                        // Mostra o Turno normalmente
                         Text("Turno:", fontSize = 10.sp, color = Color.LightGray)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Surface(
-                                shape = CircleShape,
-                                color = if (isBlackTurn) Color.Black else Color.White,
-                                modifier = Modifier.size(8.dp)
-                            ) {}
+                            Surface(shape = CircleShape, color = if (isBlackTurn) Color.Black else Color.White, modifier = Modifier.size(8.dp)) {}
                             Spacer(Modifier.width(4.dp))
                             Text(if (isBlackTurn) "Pretas" else "Brancas", fontSize = 11.sp, color = Color.White)
                         }
@@ -297,13 +281,12 @@ fun GameLobbyCard(
                 }
             }
 
-            // 4. Botão Entrar
             Button(
                 onClick = onJoin,
                 enabled = !isBoardFull,
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = btnColor,
-                    disabledBackgroundColor = Color.Black.copy(alpha = 0.2f), // Botão escuro, se desativado
+                    disabledBackgroundColor = Color.Black.copy(alpha = 0.2f),
                     disabledContentColor = Color.LightGray
                 ),
                 shape = RoundedCornerShape(50),
@@ -318,60 +301,31 @@ fun GameLobbyCard(
 }
 
 /**
- * Desenha um tabuleiro de Reversi miniatura usando Canvas.
- * Lê a 'String' "----------------WB----------------" do MongoDB.
+ * Composable que desenha um mini tabuleiro de Reversi.
+ * @param boardString String representando o estado do tabuleiro ('B' para preto, 'W' para branco, 'E' ou '-' para vazio).
+ * @param boardSize Tamanho do tabuleiro.
  */
 @Composable
-fun MiniBoardCanvas(boardString: String) {
+fun MiniBoardCanvas(boardString: String, boardSize: Int) {
     Canvas(modifier = Modifier.fillMaxSize().padding(2.dp)) {
-        val cellSize = size.width / 8
-        val radius = cellSize / 2 * 0.7f // 70% do tamanho da célula
+        val cellSize = size.width / boardSize
+        val radius = cellSize / 2 * 0.7f
 
-        // Desenhar Grelha
-        for (i in 1..7) {
+        for (i in 1 until boardSize) {
             val pos = i * cellSize
-            // Linhas Verticais
-            drawLine(
-                color = Color.Black.copy(alpha = 0.3f),
-                start = Offset(pos, 0f),
-                end = Offset(pos, size.height),
-                strokeWidth = 1f
-            )
-            // Linhas Horizontais
-            drawLine(
-                color = Color.Black.copy(alpha = 0.3f),
-                start = Offset(0f, pos),
-                end = Offset(size.width, pos),
-                strokeWidth = 1f
-            )
+            drawLine(color = Color.Black.copy(alpha = 0.3f), start = Offset(pos, 0f), end = Offset(pos, size.height), strokeWidth = 1f)
+            drawLine(color = Color.Black.copy(alpha = 0.3f), start = Offset(0f, pos), end = Offset(size.width, pos), strokeWidth = 1f)
         }
 
-        // Desenhar Peças
-        // O boardString tem 64 caracteres.
-        // O index vai de 0 a 63.
-        // x = index % 8, y = index / 8
-        // TODO: Garantir que o boardString irá ter sempre o tamanho do tabuleiro que foi definido (ex.: 4x4, 16x16)
         boardString.forEachIndexed { index, char ->
-            if (index < 64) {
-                val col = index % 8
-                val row = index / 8
-
+            if (index < boardSize * boardSize) {
+                val col = index % boardSize
+                val row = index / boardSize
                 val centerX = col * cellSize + (cellSize / 2)
                 val centerY = row * cellSize + (cellSize / 2)
 
-                if (char == 'B') {
-                    drawCircle(
-                        color = Color.Black,
-                        radius = radius,
-                        center = Offset(centerX, centerY)
-                    )
-                } else if (char == 'W') {
-                    drawCircle(
-                        color = Color.White,
-                        radius = radius,
-                        center = Offset(centerX, centerY)
-                    )
-                }
+                if (char == 'B') drawCircle(color = Color.Black, radius = radius, center = Offset(centerX, centerY))
+                else if (char == 'W') drawCircle(color = Color.White, radius = radius, center = Offset(centerX, centerY))
             }
         }
     }

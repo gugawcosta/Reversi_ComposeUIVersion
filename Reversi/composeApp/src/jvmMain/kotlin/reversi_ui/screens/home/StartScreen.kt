@@ -1,4 +1,4 @@
-package reversi_ui
+package reversi_ui.screens.home
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
@@ -34,18 +34,25 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import reversi.composeapp.generated.resources.Res
 import reversi.composeapp.generated.resources.reversi
-import mongodb.MongoGameManager
+import reversi_data.mongodb.MongoGameManager
 import reversi.core.Reversi
 import reversi.core.ReversiState
 import reversi.model.ReversiBoard
 import reversi.model.ReversiColor
 import reversi.model.mongoStringToBoard
+import reversi_ui.screens.lobby.CreateGameScreen
+import reversi_ui.screens.lobby.EnterGameDialog
+import java.util.UUID
+
+// Gera um ID único sempre que a app é aberta.
+val sessionUserId: String = UUID.randomUUID().toString()
 
 /**
- * Ecrã inicial do jogo, com opções para criar ou entrar num jogo.
+ * Tela inicial do jogo Reversi.
+ * Permite criar ou entrar em jogos multiplayer, ou aceder ao lobby.
  * @param onGameStart Função chamada quando um jogo é iniciado.
- * Recebe o jogo, o nome do jogo e a cor do jogador.
- * @param onResolution Função chamada para abrir o ecrã de resolução.
+ * Recebe o jogo Reversi, o nome do jogo, e a cor do jogador.
+ * @param onResolution Função chamada para aceder à resolução do jogo.
  * @param onOpenLobby Função chamada para abrir o lobby online.
  */
 @Composable
@@ -54,38 +61,30 @@ fun StartScreen(
     onResolution: () -> Unit,
     onOpenLobby: () -> Unit
 ) {
-    // Scope para corrotinas
     val scope = rememberCoroutineScope()
-
-    // Estados para mostrar os diálogos
     var showCreateDialog by remember { mutableStateOf(false) }
     var showJoinDialog by remember { mutableStateOf(false) }
-
-    // Estado para mensagem de erro no Join
     var joinErrorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Dialog de criar jogo
+    // Dialog de Criar (Passamos o nosso ID para registar como Criador)
     if (showCreateDialog) {
         CreateGameScreen(
+            myUserId = sessionUserId,
             onDismiss = { showCreateDialog = false },
-            onConfirm = { gameName, selectedColor ->
-                // Aqui só precisamos de iniciar a UI localmente.
-                showCreateDialog = false // Fecha o dialog
-                val newGame = Reversi(ReversiBoard(8, 8), startingColor = selectedColor)
-                onGameStart(newGame, gameName, selectedColor) // Muda de ecrã
+            onConfirm = { gameName, selectedColor, size ->
+                showCreateDialog = false
+                val newGame = Reversi(ReversiBoard(size, size), startingColor = selectedColor)
+                onGameStart(newGame, gameName, selectedColor)
             }
         )
     }
 
-    // Dialog de entrar num jogo
+    // Dialog de Join Manual (Verifica se podemos entrar)
     if (showJoinDialog) {
         EnterGameDialog(
             errorMessage = joinErrorMessage,
             onInteraction = { joinErrorMessage = null },
-            onDismiss = {
-                showJoinDialog = false
-                joinErrorMessage = null
-            },
+            onDismiss = { showJoinDialog = false; joinErrorMessage = null },
             onConfirm = { gameNameInput ->
                 scope.launch {
                     val cleanName = gameNameInput.trim()
@@ -95,19 +94,33 @@ fun StartScreen(
                         return@launch
                     }
 
+                    // 1. Tentar reservar lugar / verificar acesso
+                    val canEnter = MongoGameManager.joinGameAsPlayer2(cleanName, sessionUserId)
+
+                    if (!canEnter) {
+                        joinErrorMessage = "Jogo cheio ou inacessível."
+                        return@launch
+                    }
+
+                    // 2. Se permitido, carregar estado
                     val gameState = MongoGameManager.loadGameState(cleanName)
 
                     if (gameState != null) {
-                        val turnStr = gameState.turn.uppercase()
-                        val turnColor = if (turnStr.contains("WHITE")) ReversiColor.WHITE else ReversiColor.BLACK
+                        // Determinar a minha cor:
                         val p1ColorStr = gameState.p1Color.uppercase()
                         val creatorColor = if (p1ColorStr.contains("WHITE")) ReversiColor.WHITE else ReversiColor.BLACK
 
-                        // Quem entra é a cor oposta
-                        val myColor = if (creatorColor == ReversiColor.BLACK) ReversiColor.WHITE else ReversiColor.BLACK
+                        // Se eu sou o criador, fico com a cor do criador. Senão, fico com a oposta.
+                        val myColor =
+                            if (gameState.player1Id == sessionUserId) creatorColor else (if (creatorColor == ReversiColor.BLACK) ReversiColor.WHITE else ReversiColor.BLACK)
 
-                        // Reconstruir o jogo
-                        val loadedGame = Reversi(ReversiBoard(8, 8), startingColor = turnColor)
+                        val turnStr = gameState.turn.uppercase()
+                        val turnColor = if (turnStr.contains("WHITE")) ReversiColor.WHITE else ReversiColor.BLACK
+
+                        // Tamanho do tabuleiro correto
+                        val size = if (gameState.boardSize > 0) gameState.boardSize else 8
+
+                        val loadedGame = Reversi(ReversiBoard(size, size), startingColor = turnColor)
                         val newPieces = mongoStringToBoard(gameState.board, loadedGame.board)
 
                         try {
@@ -118,7 +131,8 @@ fun StartScreen(
                                 board = loadedGame.board
                             )
                             loadedGame.currentState = newState
-                        } catch (e: Exception) { }
+                        } catch (e: Exception) {
+                        }
 
                         joinErrorMessage = null
                         showJoinDialog = false
@@ -131,7 +145,7 @@ fun StartScreen(
         )
     }
 
-    // UI Principal com animação de fundo
+    // UI Visual (Animação de fundo e Botões)
     val transition = rememberInfiniteTransition()
     val animProgress by transition.animateFloat(
         initialValue = -1f,
@@ -178,7 +192,7 @@ fun StartScreen(
                     verticalArrangement = Arrangement.spacedBy(18.dp, alignment = Alignment.CenterVertically)
                 ) {
                     Box(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp), contentAlignment = Alignment.Center) {
-                        val label = "Reversi"
+                        val label = "REVERSI"
                         val outlineColor = Color.Black.copy(alpha = 0.72f)
                         val mainStyle = TextStyle(
                             brush = Brush.horizontalGradient(listOf(Color(0xFF9BE49A), Color(0xFF49A64C), Color(0xFF2F7F33))),
@@ -192,9 +206,9 @@ fun StartScreen(
                         Text(label, style = mainStyle, textAlign = TextAlign.Center)
                     }
 
-                    AccentButton(text = "Criar jogo", onClick = { showCreateDialog = true }, modifier = Modifier.fillMaxWidth(0.3f))
+                    AccentButton(text = "Criar um jogo", onClick = { showCreateDialog = true }, modifier = Modifier.fillMaxWidth(0.3f))
                     AccentButton(text = "Entrar num jogo", onClick = { showJoinDialog = true; joinErrorMessage = null }, modifier = Modifier.fillMaxWidth(0.3f))
-                    AccentButton(text = "Lobby Online", onClick = onOpenLobby, modifier = Modifier.fillMaxWidth(0.3f))
+                    AccentButton(text = "Lobby", onClick = onOpenLobby, modifier = Modifier.fillMaxWidth(0.3f))
                     AccentButton(text = "Resolução", onClick = onResolution, modifier = Modifier.fillMaxWidth(0.2f))
                 }
             }
@@ -203,14 +217,14 @@ fun StartScreen(
 }
 
 /**
- * Botão com estilo "accent" personalizado.
+ * Botão personalizado com estilo de destaque.
  * @param text Texto do botão.
- * @param onClick Função chamada ao clicar no botão.
- * @param modifier Modificador do Compose.
+ * @param onClick Ação ao clicar no botão.
+ * @param modifier Modificador para o botão.
  * @param background Cor de fundo do botão.
  * @param borderColor Cor da borda do botão.
  * @param shape Forma do botão.
- * @param contentPadding Espaçamento interno do botão.
+ * @param contentPadding Padding interno do botão.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable

@@ -20,6 +20,11 @@ data class ReversiBoard(
 ):  Board,
     Serializable
 {
+    /** * Propriedade de conveniência para aceder ao tamanho do tabuleiro.
+     * Necessária porque a UI (BoardView) espera uma propriedade .size
+     * e o Reversi é sempre jogado num tabuleiro quadrado.
+     */
+    val size: Int get() = width
 
     /** The total number of cells on the board (height * width). */
     val totalCells = height * width
@@ -34,6 +39,7 @@ data class ReversiBoard(
      * @return a [Map] associating each [Cell] with its initial [ReversiPiece].
      */
     fun getInitialPieces(): Map<Cell, ReversiPiece> {
+        // A lógica de divisão funciona bem para qualquer tamanho PAR (4, 6, 8, 10...)
         val midWidth1 = width / 2 + 1
         val midWidth2 = width / 2
         val midHeight1 = height / 2 + 1
